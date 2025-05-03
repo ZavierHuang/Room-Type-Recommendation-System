@@ -1,7 +1,9 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, request, jsonify
+from RAG import RAGPipeline
 import json
 
 app = Flask(__name__)
+rag = RAGPipeline('static/rooms.json')
 
 @app.route('/')
 def index():
@@ -9,6 +11,12 @@ def index():
     with open('static/rooms.json', 'r', encoding='utf-8') as f:
         rooms = json.load(f)
     return render_template('index.html', rooms=rooms)
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    user_input = request.json['message']
+    response = rag.query(user_input)
+    return jsonify({'response': response})
 
 if __name__ == '__main__':
     app.run(debug=True)
