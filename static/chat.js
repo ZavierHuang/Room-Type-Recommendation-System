@@ -38,6 +38,10 @@ $(document).ready(function() {
                 const rooms = response.rooms;
                 const conclusion = response.conclusion;
 
+                console.log("response:", response)
+                console.log("rooms:", rooms)
+                console.log("conclusion:", conclusion)
+
                 // AI 結論訊息
                 $('#chat-messages').append(`
                     <div class="chat-message ai">
@@ -49,18 +53,20 @@ $(document).ready(function() {
                 `);
 
                 // 在對話流中插入每個卡片
-                if (rooms && rooms.length > 0) {
-                    rooms.forEach(room => {
+                if (rooms && Object.keys(rooms).length > 0) {
+                    Object.entries(rooms).forEach(([name, room]) => {
                         const cardHtml = `
                             <div class="chat-message ai">
                                 <img src="/static/ai-avatar.png" class="chat-avatar">
                                 <div class="card mb-2" style="width: 100%;">
                                     <div class="card-body">
-                                        <h5 class="card-title">${room.name}</h5>
+                                        <h5 class="card-title">${name}</h5>
                                         <h6 class="card-subtitle mb-2 text-muted">價格：${room.price} 元</h6>
                                         <p class="card-text">
                                             面積：${room.area}<br>
-                                            特色：${room.features}
+                                            特色：${room.features}<br>
+                                            風格：${room.style}<br>
+                                            床數：${room.maxOccupancy}
                                         </p>
                                     </div>
                                 </div>
@@ -69,6 +75,7 @@ $(document).ready(function() {
                         $('#chat-messages').append(cardHtml);
                     });
                 }
+                
 
                 $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
             },

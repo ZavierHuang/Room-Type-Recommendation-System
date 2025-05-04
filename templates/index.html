@@ -16,7 +16,12 @@
                     <div class="card-body">
                         <h5 class="card-title">{{ room.name }}</h5>
                         <h6 class="card-subtitle mb-2 text-muted">價格：{{ room.price }} 元</h6>
-                        <p class="card-text">面積：{{ room.area }}<br>特色：{{ room.features }}</p>
+                        <p class="card-text">
+                            面積：{{ room.area }}<br>
+                            特色：{{ room.features }} <br>
+                            風格：{{ room.style }} <br>
+                            床數：{{ room.maxOccupancy }} <br>
+                        </p>
                     </div>
                 </div>
             </div>

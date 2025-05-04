@@ -71,7 +71,7 @@
     justify-content: flex-start;
 }
 .chat-bubble {
-    max-width: 70%;
+    max-width: 80%;
     padding: 10px;
     border-radius: 10px;
 }

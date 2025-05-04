@@ -1,62 +1,162 @@
 [
     {
-        "name": "標準雙人房",
-        "price": 3000,
-        "area": "20m²",
-        "features": "市景、雙人床、免費 WiFi"
+        "name": "和式套房",
+        "price": "5000",
+        "area": "30",
+        "features": "日式榻榻米、茶几、浴衣、日式拉門",
+        "style": "日式",
+        "maxOccupancy": "2人房"
     },
     {
-        "name": "豪華雙人房",
-        "price": 4000,
-        "area": "25m²",
-        "features": "市景、陽台、雙人床、免費早餐"
-    },
-    {
-        "name": "親子家庭房",
-        "price": 5000,
-        "area": "30m²",
-        "features": "市景、兩大床、兒童遊戲區、嬰兒床提供"
-    },
-    {
-        "name": "海景雙人房",
-        "price": 5500,
-        "area": "28m²",
-        "features": "海景、陽台、雙人床、浴缸"
-    },
-    {
-        "name": "海景豪華房",
-        "price": 7000,
-        "area": "35m²",
-        "features": "海景、陽台、浴缸、免費迷你吧"
-    },
-    {
-        "name": "商務單人房",
-        "price": 2800,
-        "area": "18m²",
-        "features": "市景、單人床、書桌、免費 WiFi"
-    },
-    {
-        "name": "行政套房",
-        "price": 8500,
-        "area": "40m²",
-        "features": "市景、獨立客廳、特大床、咖啡機"
-    },
-    {
-        "name": "和式房",
-        "price": 4500,
-        "area": "22m²",
-        "features": "市景、榻榻米、泡茶區、日式浴衣"
+        "name": "現代豪華雙人房",
+        "price": "4800",
+        "area": "28",
+        "features": "大理石浴室、景觀窗、書桌",
+        "style": "現代",
+        "maxOccupancy": "2人房"
     },
     {
         "name": "寵物友善房",
-        "price": 4800,
-        "area": "26m²",
-        "features": "市景、雙人床、陽台、可帶寵物"
+        "price": "4500",
+        "area": "25",
+        "features": "寵物床、戶外空間、寵物用品",
+        "style": "自然",
+        "maxOccupancy": "2人房"
     },
     {
-        "name": "泳池景雙人房",
-        "price": 5300,
-        "area": "30m²",
-        "features": "泳池景、陽台、雙人床、浴缸"
+        "name": "泳池景家庭房",
+        "price": "6500",
+        "area": "35",
+        "features": "泳池景、陽台、家庭桌椅",
+        "style": "現代",
+        "maxOccupancy": "4人房"
+    },
+    {
+        "name": "行政套房",
+        "price": "8000",
+        "area": "40",
+        "features": "商務書桌、沙發區、免費mini bar",
+        "style": "現代",
+        "maxOccupancy": "2人房"
+    },
+    {
+        "name": "簡約雙床房",
+        "price": "4200",
+        "area": "26",
+        "features": "兩張單人床、閱讀燈、行李架",
+        "style": "簡約",
+        "maxOccupancy": "2人房"
+    },
+    {
+        "name": "景觀雙人房",
+        "price": "5200",
+        "area": "28",
+        "features": "高樓層景觀、陽台、浴缸",
+        "style": "現代",
+        "maxOccupancy": "2人房"
+    },
+    {
+        "name": "親子套房",
+        "price": "7000",
+        "area": "38",
+        "features": "遊戲帳篷、嬰兒床、家庭遊戲區",
+        "style": "家庭",
+        "maxOccupancy": "4人房"
+    },
+    {
+        "name": "歐式經典雙人房",
+        "price": "5400",
+        "area": "29",
+        "features": "歐式家具、水晶吊燈、拱形窗",
+        "style": "歐式",
+        "maxOccupancy": "2人房"
+    },
+    {
+        "name": "自然風景觀房",
+        "price": "5600",
+        "area": "30",
+        "features": "森林景觀、大窗戶、自然木質地板",
+        "style": "自然",
+        "maxOccupancy": "2人房"
+    },
+    {
+        "name": "商務單人房",
+        "price": "3800",
+        "area": "22",
+        "features": "辦公桌、檯燈、高速WiFi",
+        "style": "商務",
+        "maxOccupancy": "1人房"
+    },
+    {
+        "name": "和洋混合套房",
+        "price": "6200",
+        "area": "32",
+        "features": "日式榻榻米 + 西式床鋪、茶几",
+        "style": "日式/現代",
+        "maxOccupancy": "2人房"
+    },
+    {
+        "name": "豪華三人房",
+        "price": "6000",
+        "area": "33",
+        "features": "三張單人床、沙發、茶几",
+        "style": "現代",
+        "maxOccupancy": "3人房"
+    },
+    {
+        "name": "湖景套房",
+        "price": "7500",
+        "area": "36",
+        "features": "湖景陽台、浴缸、休憩區",
+        "style": "自然",
+        "maxOccupancy": "2人房"
+    },
+    {
+        "name": "浪漫蜜月房",
+        "price": "7200",
+        "area": "34",
+        "features": "圓形床、情人浴缸、香氛蠟燭",
+        "style": "浪漫",
+        "maxOccupancy": "2人房"
+    },
+    {
+        "name": "現代四人房",
+        "price": "6800",
+        "area": "38",
+        "features": "兩張雙人床、沙發、餐桌",
+        "style": "現代",
+        "maxOccupancy": "4人房"
+    },
+    {
+        "name": "古典豪華套房",
+        "price": "8200",
+        "area": "42",
+        "features": "古典家具、壁爐、沙發",
+        "style": "歐式",
+        "maxOccupancy": "2人房"
+    },
+    {
+        "name": "和式家庭房",
+        "price": "7500",
+        "area": "36",
+        "features": "日式塌塌米、家庭茶桌、拉門",
+        "style": "日式",
+        "maxOccupancy": "4人房"
+    },
+    {
+        "name": "工業風雙人房",
+        "price": "5300",
+        "area": "27",
+        "features": "工業風設計、紅磚牆、裸露吊燈",
+        "style": "工業",
+        "maxOccupancy": "2人房"
+    },
+    {
+        "name": "山景豪華房",
+        "price": "7800",
+        "area": "37",
+        "features": "山景陽台、落地窗、吊椅",
+        "style": "自然",
+        "maxOccupancy": "2人房"
     }
 ]

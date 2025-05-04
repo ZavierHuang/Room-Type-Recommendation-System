@@ -1,70 +1,81 @@
 import json
 from langchain_community.llms import Ollama
 from langchain.prompts import ChatPromptTemplate
-from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.docstore.document import Document
 
 class RAGPipeline:
     def __init__(self, json_path):
-        # 讀入 rooms.json
         with open(json_path, 'r', encoding='utf-8') as f:
             self.data = json.load(f)
-        self.docs = [Document(page_content=f"{item['name']}。{item['features']}。") for item in self.data]
-
-        # 初始化向量資料庫
+        # 把房型資料串接起來作為 embedding corpus
+        self.docs = [
+            Document(page_content=f"名稱:{item['name']} 價格:{item['price']} 面積:{item['area']} 特色:{item['features']} 風格:{item.get('style', '')} 房型:{item.get('maxOccupancy', '')}")
+            for item in self.data
+        ]
         embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
         self.vectorstore = FAISS.from_documents(self.docs, embeddings)
-        self.retriever = self.vectorstore.as_retriever()
+        self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 10})
 
     def LLM_Prediction(self, question, rooms_summary):
-        llm = Ollama(
-            model="llama3.2:latest",
-            temperature=0.5
-        )
-
-        # 設計 prompt
+        llm = Ollama(model="llama3.2:latest", temperature=0.5)
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "你是一個親切的飯店客服，會根據提供的房型推薦給客人，結語請自然、熱情，不要自己編造新房型名稱。"),
-            ("user", "使用者問題：{input}\n相關房型：{rooms}\n請給出一段推薦的結語，並且使用繁體中文回覆。")
+            ("system",
+            "你是一個專業且親切的飯店推薦助手，請根據使用者的需求（例如價格、風格、幾人房）"
+            "從提供的房型資料中挑選出最符合需求的房型，最多只列出3個。"
+            "如果有多個符合需求的房型，請只列出前三個。"
+            "如果使用者的問題與房型推薦無關，請禮貌回覆「我是一個飯店推薦助手，目前只提供房型相關的建議喔！」。"
+            "不要編造資料庫中沒有的房型名稱，全程請務必使用繁體中文回覆。"),
+            ("user",
+            "使用者需求：{input}\n"
+            "房型資料：{rooms}\n"
+            "請給出推薦房型及結語，房型名稱務必與資料庫中相同。\n"
+            "回覆格式如下：\n"
+            "推薦房型：\n"
+            "房型名稱\n"
+            "推薦理由：...\n"
+            "結語：..."
+            )
         ])
 
-        # 建立 chain
+
         chain = prompt | llm
         result = chain.invoke({"input": question, "rooms": rooms_summary})
-
-        
-
         return result
 
     def query(self, question):
-        # 用 retriever 找房型
-        retrieved_docs = self.retriever.get_relevant_documents(question)
-        matched_rooms = []
-        for doc in retrieved_docs:
-            for room in self.data:
-                if room['name'] in doc.page_content:
-                    matched_rooms.append(room)
-        unique_rooms = {room['name']: room for room in matched_rooms}.values()
+        # 只用 retriever 撈 top10，不做 Python 過濾
+        docs = self.retriever.get_relevant_documents(question)
+        # 組成房型摘要文字
+        rooms_summary = "\n".join([doc.page_content for doc in docs])
 
-        if unique_rooms:
-            rooms_list = list(unique_rooms)
-            rooms_summary = "、".join([room['name'] for room in rooms_list])
-
-            # 由 LLM 生成結語
+        if rooms_summary.strip():
             conclusion = self.LLM_Prediction(question, rooms_summary)
-
-            # 組合回傳結果（房型列表 + 結語）
             response = {
-                "rooms": rooms_list,
+                "rooms": {},  # LLM 自己負責選擇和輸出
                 "conclusion": conclusion
             }
+
+            for item in self.data:
+                if item['name'] in conclusion:
+                    response['rooms'][item['name']] = {
+                        "price" : item['price'],
+                        "area": item['area'],
+                        "features": item['features'],
+                        "style": item['style'],
+                        "maxOccupancy": item['maxOccupancy']
+                    }
+
+            print("conclusion:", conclusion)
+
         else:
             response = {
                 "rooms": [],
-                "conclusion": "抱歉，找不到符合你需求的房型，可以換個關鍵字試試喔！"
+                "conclusion": "抱歉，找不到符合您需求的房型，可以換個關鍵字再試試喔！"
             }
 
-        print("response:", response)
 
+
+        print("response:", response)
         return response
