@@ -1,8 +1,8 @@
 import json
 from langchain_community.llms import Ollama
 from langchain.prompts import ChatPromptTemplate
-from langchain.vectorstores import FAISS
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.docstore.document import Document
 
 class RAGPipeline:
@@ -26,7 +26,7 @@ class RAGPipeline:
         # 設計 prompt
         prompt = ChatPromptTemplate.from_messages([
             ("system", "你是一個親切的飯店客服，會根據提供的房型推薦給客人，結語請自然、熱情，不要自己編造新房型名稱。"),
-            ("user", "使用者問題：{input}\n相關房型：{rooms}\n請給出一段推薦的結語。")
+            ("user", "使用者問題：{input}\n相關房型：{rooms}\n請給出一段推薦的結語，並且使用繁體中文回覆。")
         ])
 
         # 建立 chain

@@ -7,11 +7,11 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container mt-4">
+    <div class="container with-chat mt-4">
         <h1 class="mb-4 text-center">房型推薦系統</h1>
         <div class="row">
             {% for room in rooms %}
-            <div class="col-md-4 mb-4">
+            <div class="col-md-3 mb-4">
                 <div class="card h-100">
                     <div class="card-body">
                         <h5 class="card-title">{{ room.name }}</h5>
@@ -28,6 +28,9 @@
     <div id="chat-sidebar">
         <div id="chat-header">💬 房型小幫手（點擊收合）</div>
         <div id="chat-messages"></div>
+        <div class="chat-cards-container">
+            <div id="chat-cards"></div>
+        </div>
         <div id="chat-input-area" class="input-group">
             <input type="text" class="form-control" id="chat-input" placeholder="輸入你的問題...">
             <button class="btn btn-primary" id="send-btn">送出</button>
