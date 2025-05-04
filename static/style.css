@@ -1,0 +1,47 @@
+.container.with-chat {
+    margin-right: 300px; /* 只在展開聊天室時讓出空間 */
+}
+#chat-sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 100%;
+    background: white;
+    border-left: 1px solid #ccc;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+    transform: translateX(0);
+    z-index: 1000;
+}
+#chat-sidebar.collapsed {
+    transform: translateX(100%);
+}
+#chat-header {
+    padding: 10px;
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+}
+#chat-messages {
+    padding: 10px;
+    height: calc(100% - 120px);
+    overflow-y: auto;
+}
+#chat-input-area {
+    padding: 10px;
+    border-top: 1px solid #ccc;
+}
+#chat-toggle-btn {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    background: #007bff;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px 0 0 8px;
+    cursor: pointer;
+    z-index: 1001;
+    display: none;
+}
