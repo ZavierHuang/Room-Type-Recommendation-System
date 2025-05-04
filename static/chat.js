@@ -39,6 +39,9 @@ $(document).ready(function() {
             </div>
         `);
         $('#chat-input').val('');
+        
+        // 強制拉到最底
+        $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
 
         // 加入 loading 卡片
         const loadingId = `loading-${Date.now()}`;
