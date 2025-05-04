@@ -1,34 +1,44 @@
 import json
-from langchain.llms import Ollama
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
+from langchain_community.llms import Ollama
+from langchain.prompts import ChatPromptTemplate
 from langchain.vectorstores import FAISS
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.docstore.document import Document
 
 class RAGPipeline:
     def __init__(self, json_path):
+        # 讀入 rooms.json
         with open(json_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        self.data = data
-        self.docs = [Document(page_content=f"{item['name']}。{item['features']}。") for item in data]
+            self.data = json.load(f)
+        self.docs = [Document(page_content=f"{item['name']}。{item['features']}。") for item in self.data]
 
+        # 初始化向量資料庫
         embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
         self.vectorstore = FAISS.from_documents(self.docs, embeddings)
-
-        self.llm = Ollama(model="llama3.2")
         self.retriever = self.vectorstore.as_retriever()
 
-        self.prompt = PromptTemplate(
-            input_variables=["question", "rooms"],
-            template=(
-                "使用者問題: {question}\n"
-                "相關房型: {rooms}\n"
-            )
+    def LLM_Prediction(self, question, rooms_summary):
+        llm = Ollama(
+            model="llama3.2:latest",
+            temperature=0.5
         )
-        self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
+
+        # 設計 prompt
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", "你是一個親切的飯店客服，會根據提供的房型推薦給客人，結語請自然、熱情，不要自己編造新房型名稱。"),
+            ("user", "使用者問題：{input}\n相關房型：{rooms}\n請給出一段推薦的結語。")
+        ])
+
+        # 建立 chain
+        chain = prompt | llm
+        result = chain.invoke({"input": question, "rooms": rooms_summary})
+
+        
+
+        return result
 
     def query(self, question):
+        # 用 retriever 找房型
         retrieved_docs = self.retriever.get_relevant_documents(question)
         matched_rooms = []
         for doc in retrieved_docs:
@@ -38,17 +48,23 @@ class RAGPipeline:
         unique_rooms = {room['name']: room for room in matched_rooms}.values()
 
         if unique_rooms:
-            reply = "可以考慮以下選擇：\n\n"
-            for idx, room in enumerate(unique_rooms, 1):
-                reply += f"{idx}. {room['name']}（價格：{room['price']}）\n"
+            rooms_list = list(unique_rooms)
+            rooms_summary = "、".join([room['name'] for room in rooms_list])
 
-            # 組成房型簡短描述給 LLM
-            rooms_summary = ', '.join([room['name'] for room in unique_rooms])
+            # 由 LLM 生成結語
+            conclusion = self.LLM_Prediction(question, rooms_summary)
 
-            # 請 LLM 生成自然結語
-            conclusion = self.chain.run(question=question, rooms=rooms_summary)
-            reply += f"\n{conclusion.strip()}"
+            # 組合回傳結果（房型列表 + 結語）
+            response = {
+                "rooms": rooms_list,
+                "conclusion": conclusion
+            }
         else:
-            reply = "抱歉，找不到符合你需求的房型，可以換個關鍵字試試喔！"
+            response = {
+                "rooms": [],
+                "conclusion": "抱歉，找不到符合你需求的房型，可以換個關鍵字試試喔！"
+            }
 
-        return reply
+        print("response:", response)
+
+        return response
