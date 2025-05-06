@@ -40,7 +40,9 @@ class TextToImageTest(unittest.TestCase):
         result = self.text2Image.TranslatorAPI()
         self.assertEqual(self.normalize(result), self.normalize(expected))
         
-
+    def test_text_to_image_integration(self):
+        self.text2Image.textToImage()
+        self.assertTrue(os.path.exists(self.text2Image.getImageFilePath()))
 
 if __name__ == '__main__':
     unittest.main()
