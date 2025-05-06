@@ -49,8 +49,11 @@ class Text2Image:
     
     def generateImage(self):
         image = self.pipe(self.prompt).images[0]
-        image.show()
-        image.save(self.imageFilePath)
+        print("image:", image)
+        new_size = (1000, 650)
+        resized_image = image.resize(new_size)
+        resized_image.show()
+        resized_image.save(self.imageFilePath)
 
     def textToImage(self):
         self.model_id = "stabilityai/stable-diffusion-2"
