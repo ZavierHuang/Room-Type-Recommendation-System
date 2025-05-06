@@ -1,7 +1,11 @@
 import unittest
 import os
+
+from tqdm import tqdm
+
 from Configure import ROOT
 from imageAI.Text2Image import Text2Image
+import json
 import re
 
 class TextToImageTest(unittest.TestCase):
@@ -18,7 +22,7 @@ class TextToImageTest(unittest.TestCase):
             "style": "日式",
             "maxOccupancy": "2人房"
         }
-        imageFilePath = os.path.join(ROOT,'test/test.png')
+        imageFilePath = 'test/test.png'
         self.text2Image = Text2Image(jsonData, imageFilePath)
 
     def test_convert_to_Sentence_From_Json(self):
@@ -43,6 +47,32 @@ class TextToImageTest(unittest.TestCase):
     def test_text_to_image_integration(self):
         self.text2Image.textToImage()
         self.assertTrue(os.path.exists(self.text2Image.getImageFilePath()))
+
+    def test_text_to_image_batch(self):
+        with open(os.path.join(ROOT, 'static/rooms.json'), 'r', encoding='utf-8') as jsonFile:
+            data = json.load(jsonFile)
+
+        counter = 0
+
+        for item in tqdm(data, desc="Generating..."):
+            if len(item['img']) != 0:
+                counter += 1
+                continue
+            imageFilePath = f'static/image/img_{counter}.png'
+            self.text2Image.setJsonData(item)
+            self.text2Image.setImageFilePath(imageFilePath)
+            self.text2Image.textToImage()
+            item['img'] = imageFilePath
+            counter += 1
+
+        with open(os.path.join(ROOT, 'static/rooms.json'), 'w', encoding='utf-8') as jsonFile:
+            jsonFile.write(json.dumps(data, indent=4, ensure_ascii=False))
+
+        for item in data:
+            self.assertNotEqual(len(item['img']), 0)
+            self.assertTrue(os.path.exists(os.path.join(ROOT, item['img'])))
+
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,8 +1,11 @@
+import json
+import os
+
 from diffusers import StableDiffusionPipeline, EulerDiscreteScheduler
 import torch
 from deep_translator import GoogleTranslator
 
-
+from Configure import ROOT
 
 
 class Text2Image:
@@ -14,14 +17,20 @@ class Text2Image:
     def setPrompt(self, prompt):
         self.prompt = prompt
 
+    def setJsonData(self, jsonData):
+        self.jsonData = jsonData
+
     def setImageFilePath(self, imageFilePath):
-        self.imageFilePath = imageFilePath
+        self.imageFilePath = os.path.join(ROOT, imageFilePath)
 
     def getPrompt(self):
         return self.prompt
 
     def getImageFilePath(self):
         return self.imageFilePath
+
+    def getJsonData(self):
+        return self.jsonData
 
     def TranslatorAPI(self):
         try:
@@ -50,7 +59,7 @@ class Text2Image:
     def generateImage(self):
         image = self.pipe(self.prompt).images[0]
         print("image:", image)
-        new_size = (1000, 650)
+        new_size = (1000, 512)
         resized_image = image.resize(new_size)
         resized_image.show()
         resized_image.save(self.imageFilePath)
@@ -65,5 +74,3 @@ class Text2Image:
         self.prompt = self.TranslatorAPI()
 
         self.generateImage()
-        
-
