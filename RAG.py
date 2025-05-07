@@ -1,8 +1,8 @@
 import json
 from langchain_community.llms import Ollama
 from langchain.prompts import ChatPromptTemplate
-from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings, FastEmbedEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import FastEmbedEmbeddings
 from langchain.docstore.document import Document
 
 class RAGPipeline:
@@ -16,7 +16,7 @@ class RAGPipeline:
         ]
         # embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
         embeddings = FastEmbedEmbeddings()
-        self.vectorstore = FAISS.from_documents(self.docs, embeddings)
+        self.vectorstore = Chroma.from_documents(self.docs, embeddings)
         self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 10})
 
     def LLM_Prediction(self, question, rooms_summary):
