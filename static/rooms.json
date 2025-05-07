@@ -7,7 +7,7 @@
         "features": "日式榻榻米、茶几、浴衣、日式拉門",
         "style": "日式",
         "maxOccupancy": "2人房",
-        "img": "static/image/img_0.png"
+        "image": "static/image/img_0.png"
     },
     {
         "id": 1,
@@ -17,7 +17,7 @@
         "features": "大理石浴室、景觀窗、書桌",
         "style": "現代",
         "maxOccupancy": "2人房",
-        "img": "static/image/img_1.png"
+        "image": "static/image/img_1.png"
     },
     {
         "id": 2,
@@ -27,7 +27,7 @@
         "features": "寵物床、戶外空間、寵物用品",
         "style": "自然",
         "maxOccupancy": "2人房",
-        "img": "static/image/img_2.png"
+        "image": "static/image/img_2.png"
     },
     {
         "id": 3,
@@ -37,7 +37,7 @@
         "features": "泳池景、陽台、家庭桌椅",
         "style": "現代",
         "maxOccupancy": "4人房",
-        "img": "static/image/img_3.png"
+        "image": "static/image/img_3.png"
     },
     {
         "id": 4,
@@ -47,7 +47,7 @@
         "features": "商務書桌、沙發區、免費mini bar",
         "style": "現代",
         "maxOccupancy": "2人房",
-        "img": "static/image/img_4.png"
+        "image": "static/image/img_4.png"
     },
     {
         "id": 5,
@@ -57,7 +57,7 @@
         "features": "兩張單人床、閱讀燈、行李架",
         "style": "簡約",
         "maxOccupancy": "2人房",
-        "img": "static/image/img_5.png"
+        "image": "static/image/img_5.png"
     },
     {
         "id": 6,
@@ -67,7 +67,7 @@
         "features": "高樓層景觀、陽台、浴缸",
         "style": "現代",
         "maxOccupancy": "2人房",
-        "img": "static/image/img_6.png"
+        "image": "static/image/img_6.png"
     },
     {
         "id": 7,
@@ -77,7 +77,7 @@
         "features": "遊戲帳篷、嬰兒床、家庭遊戲區",
         "style": "家庭",
         "maxOccupancy": "4人房",
-        "img": "static/image/img_7.png"
+        "image": "static/image/img_7.png"
     },
     {
         "id": 8,
@@ -87,7 +87,7 @@
         "features": "歐式家具、水晶吊燈、拱形窗",
         "style": "歐式",
         "maxOccupancy": "2人房",
-        "img": "static/image/img_8.png"
+        "image": "static/image/img_8.png"
     },
     {
         "id": 9,
@@ -97,7 +97,7 @@
         "features": "森林景觀、大窗戶、雙人床、自然木質地板",
         "style": "自然",
         "maxOccupancy": "2人房",
-        "img": "static/image/img_9.png"
+        "image": "static/image/img_9.png"
     },
     {
         "id": 10,
@@ -107,7 +107,7 @@
         "features": "辦公桌、檯燈、高速WiFi",
         "style": "商務",
         "maxOccupancy": "1人房",
-        "img": "static/image/img_10.png"
+        "image": "static/image/img_10.png"
     },
     {
         "id": 11,
@@ -117,7 +117,7 @@
         "features": "日式榻榻米 + 西式床鋪、茶几",
         "style": "日式/現代",
         "maxOccupancy": "2人房",
-        "img": "static/image/img_11.png"
+        "image": "static/image/img_11.png"
     },
     {
         "id": 12,
@@ -127,7 +127,7 @@
         "features": "三張單人床、沙發、茶几",
         "style": "現代",
         "maxOccupancy": "3人房",
-        "img": "static/image/img_12.png"
+        "image": "static/image/img_12.png"
     },
     {
         "id": 13,
@@ -137,7 +137,7 @@
         "features": "湖景陽台、浴缸、休憩區",
         "style": "自然",
         "maxOccupancy": "2人房",
-        "img": "static/image/img_13.png"
+        "image": "static/image/img_13.png"
     },
     {
         "id": 14,
@@ -147,7 +147,7 @@
         "features": "圓形床、情人浴缸、香氛蠟燭",
         "style": "浪漫",
         "maxOccupancy": "2人房",
-        "img": "static/image/img_14.png"
+        "image": "static/image/img_14.png"
     },
     {
         "id": 15,
@@ -157,7 +157,7 @@
         "features": "兩張雙人床、沙發、餐桌",
         "style": "現代",
         "maxOccupancy": "4人房",
-        "img": "static/image/img_15.png"
+        "image": "static/image/img_15.png"
     },
     {
         "id": 16,
@@ -167,7 +167,7 @@
         "features": "古典家具、壁爐、沙發",
         "style": "歐式",
         "maxOccupancy": "2人房",
-        "img": "static/image/img_16.png"
+        "image": "static/image/img_16.png"
     },
     {
         "id": 17,
@@ -177,7 +177,7 @@
         "features": "日式塌塌米、家庭茶桌、拉門",
         "style": "日式",
         "maxOccupancy": "4人房",
-        "img": "static/image/img_17.png"
+        "image": "static/image/img_17.png"
     },
     {
         "id": 18,
@@ -187,7 +187,7 @@
         "features": "工業風設計、紅磚牆、裸露吊燈",
         "style": "工業",
         "maxOccupancy": "2人房",
-        "img": "static/image/img_18.png"
+        "image": "static/image/img_18.png"
     },
     {
         "id": 19,
@@ -197,6 +197,6 @@
         "features": "山景陽台、落地窗、吊椅",
         "style": "自然",
         "maxOccupancy": "2人房",
-        "img": "static/image/img_19.png"
+        "image": "static/image/img_19.png"
     }
 ]

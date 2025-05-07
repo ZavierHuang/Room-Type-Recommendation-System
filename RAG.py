@@ -1,8 +1,8 @@
 import json
 from langchain_community.llms import Ollama
 from langchain.prompts import ChatPromptTemplate
-from langchain.vectorstores import FAISS
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.docstore.document import Document
 
 class RAGPipeline:
