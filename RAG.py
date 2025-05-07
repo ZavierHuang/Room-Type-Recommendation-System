@@ -2,7 +2,7 @@ import json
 from langchain_community.llms import Ollama
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings, FastEmbedEmbeddings
 from langchain.docstore.document import Document
 
 class RAGPipeline:
@@ -14,7 +14,8 @@ class RAGPipeline:
             Document(page_content=f"名稱:{item['name']} 價格:{item['price']} 面積:{item['area']} 特色:{item['features']} 風格:{item.get('style', '')} 床數:{item.get('maxOccupancy', '')}")
             for item in self.data
         ]
-        embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        # embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        embeddings = FastEmbedEmbeddings()
         self.vectorstore = FAISS.from_documents(self.docs, embeddings)
         self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 10})
 
