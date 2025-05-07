@@ -94,7 +94,7 @@ $(document).ready(function() {
                         const roomTimestamp = getCurrentTime();
                         const cardHtml = `
                             <div class="chat-message ai">
-                                <img src="/static/ai-avatar.png" class="chat-avatar">
+                                <img src="/static/image/ai-avatar.png" class="chat-avatar">
                                 <div class="card mb-2" style="width: 100%;">
                                     <div class="card-body d-flex flex-column">
                                         <h5 class="card-title">${name}</h5>
@@ -131,4 +131,21 @@ $(document).ready(function() {
             }
         });
     }
+});
+// 只用 click 開啟 overlay
+$(document).on('click', '.room-card', function() {
+    const imgSrc = $(this).data('image');
+    $('#overlay-img').attr('src', imgSrc);
+    $('#image-overlay').fadeIn();
+});
+
+// 按下 ESC → 關閉
+$(document).keydown(function(e) {
+    if (e.key === "Escape") {
+        $('#image-overlay').fadeOut();
+    }
+});
+// 點擊 overlay → 關閉
+$('#image-overlay').click(function() {
+    $(this).fadeOut();
 });

@@ -12,10 +12,11 @@
         <div class="row">
             {% for room in rooms %}
             <div class="col-md-3 mb-4">
-                <div class="card h-100">
+                <div class="card h-100 room-card" style="background-image: url('{{ room.image }}');" data-image="{{ room.image }}">
+                    <div class="card-overlay"></div>
                     <div class="card-body">
                         <h5 class="card-title">{{ room.name }}</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">價格：{{ room.price }} 元</h6>
+                        <h6 class="card-subtitle mb-2 text-white">價格：{{ room.price }} 元</h6>
                         <p class="card-text">
                             面積：{{ room.area }}<br>
                             特色：{{ room.features }} <br>
@@ -44,6 +45,10 @@
 
     <!-- 收縮後的小按鈕 -->
     <div id="chat-toggle-btn">💬</div>
+
+    <div id="image-overlay" style="display: none;">
+        <img id="overlay-img" src="" alt="">
+    </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="/static/chat.js"></script>
