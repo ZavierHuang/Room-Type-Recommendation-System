@@ -48,7 +48,7 @@ $(document).ready(function() {
         $('#chat-messages').append(`
             <div id="${loadingId}" class="chat-message ai d-flex flex-column align-items-start mb-2">
                 <div class="d-flex align-items-center">
-                    <img src="/static/ai-avatar.png" class="chat-avatar me-2">
+                    <img src="/static/image/ai-avatar.png" class="chat-avatar me-2">
                     <div class="chat-bubble ai d-flex align-items-center">
                         <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
                             <span class="visually-hidden">Loading...</span>
@@ -81,7 +81,7 @@ $(document).ready(function() {
                 // AI 結論訊息 + 右下角時間戳
                 $('#chat-messages').append(`
                     <div class="chat-message ai">
-                        <img src="/static/ai-avatar.png" class="chat-avatar">
+                        <img src="/static/image/ai-avatar.png" class="chat-avatar">
                         <div class="chat-bubble ai d-flex flex-column">
                             <div>${conclusion.replace(/\n/g, '<br>')}</div>
                             <div class="text-end text-muted mt-1" style="font-size: 0.7rem;">${aiTimestamp}</div>
@@ -121,7 +121,7 @@ $(document).ready(function() {
                 const aiTimestamp = getCurrentTime();
                 $('#chat-messages').append(`
                     <div class="chat-message ai">
-                        <img src="/static/ai-avatar.png" class="chat-avatar">
+                        <img src="/static/image/ai-avatar.png" class="chat-avatar">
                         <div class="chat-bubble ai d-flex flex-column">
                             <div>抱歉，伺服器出現問題，請稍後再試。</div>
                             <div class="text-end text-muted mt-1" style="font-size: 0.7rem;">${aiTimestamp}</div>
