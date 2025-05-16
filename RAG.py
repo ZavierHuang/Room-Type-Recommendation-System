@@ -40,6 +40,7 @@ class RAGPipeline:
         min_price = None
         max_price = None
 
+        # 擷取連續 3 到 5 位數字」，僅會匹配數值在 100 到 99999 的金額。
         range_match = re.search(r'(\d{3,5})\s*(元)?\s*(~|到|至|\-|—)\s*(\d{3,5})', text)
         if range_match:
             min_price = int(range_match.group(1))
@@ -53,6 +54,25 @@ class RAGPipeline:
             max_price = int(match.group(1))
 
         return min_price, max_price
+
+    def extract_area_range(self, text):
+        min_area = None
+        max_area = None
+
+        # 擷取格式：30~50m²、40 到 70 平方米 等
+        range_match = re.search(r'(\d{2,4})\s*(m²|平方公尺|平方米)?\s*(~|到|至|\-|—)\s*(\d{2,4})', text)
+        if range_match:
+            min_area = int(range_match.group(1))
+            max_area = int(range_match.group(4))
+            return min_area, max_area
+
+        if match := re.search(r'(\d{2,4})\s*(m²|平方公尺|平方米)?\s*(以上|起|以上的)', text):
+            min_area = int(match.group(1))
+
+        if match := re.search(r'(\d{2,4})\s*(m²|平方公尺|平方米)?\s*(以下|以內|之內)', text):
+            max_area = int(match.group(1))
+
+        return min_area, max_area
 
     def extract_style_keywords(self, text):
         styles = []
@@ -82,6 +102,16 @@ class RAGPipeline:
                     filtered.append(doc)
         return '\n'.join(filtered)
 
+    def filter_by_area_range(self, summary, min_area=None, max_area=None):
+        filtered = []
+        for doc in summary.split('\n'):
+            match = re.search(r'面積[:：]?(\d{1,4})', doc)
+            if match:
+                area = int(match.group(1))
+                if (min_area is None or area >= min_area) and (max_area is None or area <= max_area):
+                    filtered.append(doc)
+        return '\n'.join(filtered)
+
     def remove_duplicate_room_names(self, conclusion: str) -> str:
         seen = set()
         result = []
@@ -104,7 +134,8 @@ class RAGPipeline:
         prompt = ChatPromptTemplate.from_messages([
             ("system",
              "你是一位專業且親切的飯店房型推薦助手，專門根據使用者的需求（例如：預算、風格、入住人數等）提供最合適的房型建議。\n\n"
-             "請依據提供的房型資料中，精選出「最符合使用者需求」的房型，最多列出 3 間房型，請注意推薦的房型不可重複。\n"
+             "請依據提供的房型資料中，精選出「最符合使用者需求」的房型，最多列出 3 間房型"
+             "⚠️ 請注意推薦的房型**不可重複**，若重複則**刪除其中一個房型名稱和推薦理由**。\n"
              "⚠️ 請**務必只使用資料庫中提供的房型名稱**，不可自行編造。\n"
              "⚠️ 回覆內容請使用**繁體中文**。\n"
              "⚠️ 若使用者的問題與房型推薦無關，請親切回覆：「我是一個飯店推薦助手，目前只提供房型相關的建議喔！」"),
@@ -157,6 +188,9 @@ class RAGPipeline:
 
         if "房型推薦" in intent:
             rooms_summary = self.getRoomSummaryByRAG(question)
+
+            min_price, max_price = self.extract_price_range(question)
+            rooms_summary = self.filter_by_price_range(rooms_summary, min_price, max_price)
 
             min_price, max_price = self.extract_price_range(question)
             rooms_summary = self.filter_by_price_range(rooms_summary, min_price, max_price)
