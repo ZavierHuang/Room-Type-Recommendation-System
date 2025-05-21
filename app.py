@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from src.RAG import RAGPipeline
-from imageAI.Text2Image import Text2Image
+from src.Text2Image import Text2Image
 import json
 import time
 import os

@@ -11,8 +11,6 @@ class RAGPipeline:
         with open(json_path, 'r', encoding='utf-8') as f:
             self.data = json.load(f)
 
-        self.maxID = max([int(item['id']) for item in self.data])
-
         self.docs = [
             Document(page_content=f"名稱:{item['name']} 價格:{item['price']} 面積:{item['area']} 特色:{item['features']} 風格:{item.get('style', '')} 床數:{item.get('maxOccupancy', '')}")
             for item in self.data
@@ -23,15 +21,6 @@ class RAGPipeline:
         self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 10})
         self.llm = Ollama(model="gemma3:4b")
         self.used_names = set()  # 新增：用於追蹤所有已推薦過的房型名稱
-
-    def getMaxID(self):
-        return self.maxID
-
-    def getRoomData(self):
-        return self.data
-    
-    def addNewRoom(self, room):
-        self.data.append(room)
 
     def classify_intent(self, question):
         prompt = ChatPromptTemplate.from_messages([

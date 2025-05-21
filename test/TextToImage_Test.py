@@ -1,6 +1,6 @@
 import unittest
 import os
-from imageAI.Text2Image import Text2Image
+from src.Text2Image import Text2Image
 import re
 import pathlib
 import unittest
