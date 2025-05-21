@@ -218,5 +218,15 @@
         "style": "商務",
         "maxOccupancy": "1人房",
         "image": "../static/image/img_21.png"
+    },
+    {
+        "id": 22,
+        "name": "海景連棟別墅",
+        "price": "4500",
+        "area": "150",
+        "features": "私人花園、陽台、獨立衛浴、冰箱、Wi-Fi",
+        "style": "現代簡約",
+        "maxOccupancy": "4人房",
+        "image": "../static/image/img_22.png"
     }
 ]

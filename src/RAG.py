@@ -204,8 +204,8 @@ class RAGPipeline:
             min_price, max_price = self.extract_price_range(question)
             rooms_summary = self.filter_by_price_range(rooms_summary, min_price, max_price)
 
-            min_price, max_price = self.extract_price_range(question)
-            rooms_summary = self.filter_by_price_range(rooms_summary, min_price, max_price)
+            min_area, max_area = self.extract_area_range(question)
+            rooms_summary = self.filter_by_area_range(rooms_summary, min_area, max_area)
 
             if rooms_summary.strip():
                 conclusion = self.LLM_Prediction(question, rooms_summary)
