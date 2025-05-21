@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from src.RAG import RAGPipeline
+from imageAI.Text2Image import Text2Image
 import json
+import time
 
 app = Flask(__name__)
 rag = RAGPipeline('static/rooms.json')
@@ -43,6 +45,18 @@ def auto_recommend():
         return jsonify(room)
     else:
         return jsonify({'error': '無法推薦房型'}), 404
+
+@app.route('/generate_room_image', methods=['POST'])
+def generate_room_image():
+    data = request.get_json()
+    # 圖片儲存路徑（可自訂命名規則）
+    image_filename = f"img_{int(time.time())}.png"
+    image_path = f"static/image/{image_filename}"
+    t2i = Text2Image(data, image_path)
+    success = t2i.textToImage()
+    if not success:
+        return jsonify({'error': '圖片生成失敗'}), 500
+    return jsonify({'image_url': f'/static/image/{image_filename}'})
 
 if __name__ == '__main__':
     app.config['TEMPLATES_AUTO_RELOAD'] = True

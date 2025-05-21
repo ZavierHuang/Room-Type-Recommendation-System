@@ -11,6 +11,8 @@ class RAGPipeline:
         with open(json_path, 'r', encoding='utf-8') as f:
             self.data = json.load(f)
 
+        self.maxID = max([int(item['id']) for item in self.data])
+
         self.docs = [
             Document(page_content=f"名稱:{item['name']} 價格:{item['price']} 面積:{item['area']} 特色:{item['features']} 風格:{item.get('style', '')} 床數:{item.get('maxOccupancy', '')}")
             for item in self.data

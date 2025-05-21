@@ -45,42 +45,55 @@
 
     <!-- ADD Modal -->
     <div class="modal fade" id="addRoomModal" tabindex="-1" aria-labelledby="addRoomModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-lg"> <!-- 增加modal-lg讓modal變寬 -->
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="addRoomModalLabel">新增房型</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <form id="addRoomForm">
-              <div class="mb-3">
-                <label for="roomName" class="form-label">名稱</label>
-                <input type="text" class="form-control" id="roomName" name="name" required>
+            <div class="row">
+              <div class="col-md-7">
+                <form id="addRoomForm">
+                  <div class="mb-3">
+                    <label for="roomName" class="form-label">名稱</label>
+                    <input type="text" class="form-control" id="roomName" name="name" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="roomPrice" class="form-label">價格</label>
+                    <input type="number" class="form-control" id="roomPrice" name="price" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="roomArea" class="form-label">面積</label>
+                    <input type="number" class="form-control" id="roomArea" name="area" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="features" class="form-label">特色</label>
+                    <input type="text" class="form-control" id="roomFeatures" name="features" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="roomStyle" class="form-label">風格</label>
+                    <input type="text" class="form-control" id="roomStyle" name="style" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="roomMaxOccupancy" class="form-label">床數</label>
+                    <input type="number" class="form-control" id="roomMaxOccupancy" name="maxOccupancy" required>
+                  </div>
+                  <button type="submit" class="btn btn-primary w-100 mb-2">送出</button>
+                  <div class="d-flex gap-2 mb-2">
+                    <button type="button" class="btn btn-secondary flex-fill" id="autoFillBtn">自動推薦</button>
+                    <button type="button" class="btn btn-info flex-fill" id="roomImageBtn">房型圖片</button>
+                  </div>
+                  <button type="button" class="btn btn-outline-danger w-100" id="clearAllBtn">全部清空</button>
+                </form>
               </div>
-              <div class="mb-3">
-                <label for="roomPrice" class="form-label">價格</label>
-                <input type="number" class="form-control" id="roomPrice" name="price" required>
+              <div class="col-md-5 d-flex flex-column align-items-center justify-content-center">
+                <div id="imagePreviewContainer" style="width:100%; min-height:300px; display:flex; align-items:center; justify-content:center; border:1px dashed #ccc; background:#f8f9fa;">
+                  <span id="imagePreviewText">圖片預覽</span>
+                  <img id="roomImagePreview" src="" alt="房型圖片預覽" style="max-width:100%; max-height:300px; display:none;" />
+                </div>
               </div>
-              <div class="mb-3">
-                <label for="roomArea" class="form-label">面積</label>
-                <input type="number" class="form-control" id="roomArea" name="area" required>
-              </div>
-              <div class="mb-3">
-                <label for="features" class="form-label">特色</label>
-                <input type="text" class="form-control" id="roomFeatures" name="features" required>
-              </div>
-              <div class="mb-3">
-                <label for="roomStyle" class="form-label">風格</label>
-                <input type="text" class="form-control" id="roomStyle" name="style" required>
-              </div>
-              <div class="mb-3">
-                <label for="roomMaxOccupancy" class="form-label">床數</label>
-                <input type="number" class="form-control" id="roomMaxOccupancy" name="maxOccupancy" required>
-              </div>
-              <button type="submit" class="btn btn-primary w-100 mb-2">送出</button>
-              <button type="button" class="btn btn-secondary w-100 mb-2" id="autoFillBtn">自動推薦</button>
-              <button type="button" class="btn btn-outline-danger w-100" id="clearAllBtn">全部清空</button>
-            </form>
+            </div>
             <!-- Pending Circle -->
             <div class="pending-circle-center" id="pendingCircle" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:9999;">
               <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;" role="status">
@@ -115,22 +128,94 @@
             console.log(data);
             document.getElementById('roomFeatures').value = Array.isArray(data.features) ? data.features.join('、') : (data.features || '');
             document.getElementById('roomName').value = data.name || '';
-            document.getElementById('roomPrice').value = data.price || 0;
-            document.getElementById('roomArea').value = data.area || 0;
+            document.getElementById('roomPrice').value = data.price || '';
+            document.getElementById('roomArea').value = data.area || '';
             document.getElementById('roomStyle').value = data.style || '';
-            document.getElementById('roomMaxOccupancy').value = data.maxOccupancy || 0;
+            document.getElementById('roomMaxOccupancy').value = data.maxOccupancy || '';
             // 填入資料後 Pending Circle 自動消失
             if (pendingCircle) pendingCircle.style.display = 'none';
+            // 修正：自動推薦後檢查按鈕狀態
+            checkRoomImageBtnEnable();
           });
       });
       document.getElementById('clearAllBtn').addEventListener('click', function() {
         document.getElementById('roomName').value = '';
-        document.getElementById('roomPrice').value = 0;
-        document.getElementById('roomArea').value = 0;
+        document.getElementById('roomPrice').value = '';
+        document.getElementById('roomArea').value = '';
         document.getElementById('roomFeatures').value = '';
         document.getElementById('roomStyle').value = '';
-        document.getElementById('roomMaxOccupancy').value = 0;
+        document.getElementById('roomMaxOccupancy').value = '';
+        // 清空後檢查按鈕狀態
+        checkRoomImageBtnEnable();
       });
+      document.getElementById('roomImageBtn').addEventListener('click', function() {
+        // 顯示 Pending Circle
+        var pendingCircle = document.getElementById('pendingCircle');
+        if (pendingCircle) pendingCircle.style.display = 'flex';
+        // 收集表單資料
+        var data = {
+          name: document.getElementById('roomName').value,
+          price: document.getElementById('roomPrice').value,
+          area: document.getElementById('roomArea').value,
+          features: document.getElementById('roomFeatures').value,
+          style: document.getElementById('roomStyle').value,
+          maxOccupancy: document.getElementById('roomMaxOccupancy').value
+        };
+        fetch('/generate_room_image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+          if (pendingCircle) pendingCircle.style.display = 'none';
+          if (result.error) {
+            alert(result.error);
+            return;
+          }
+          // 顯示圖片
+          var img = document.getElementById('roomImagePreview');
+          var text = document.getElementById('imagePreviewText');
+          if (img && result.image_url) {
+            img.src = result.image_url + '?t=' + Date.now(); // 防止快取
+            img.style.display = 'block';
+            if (text) text.style.display = 'none';
+          }
+        })
+        .catch(err => {
+          if (pendingCircle) pendingCircle.style.display = 'none';
+          alert('圖片生成失敗');
+        });
+      });
+      function checkRoomImageBtnEnable() {
+        var requiredFields = [
+          'roomName',
+          'roomPrice',
+          'roomArea',
+          'roomFeatures',
+          'roomStyle',
+          'roomMaxOccupancy'
+        ];
+        var enable = true;
+        for (var i = 0; i < requiredFields.length; i++) {
+          var el = document.getElementById(requiredFields[i]);
+          if (!el || el.value === '' || el.value === null) {
+            enable = false;
+            break;
+          }
+        }
+        document.getElementById('roomImageBtn').disabled = !enable;
+      }
+
+      // 綁定 input 事件
+      ['roomName','roomPrice','roomArea','roomFeatures','roomStyle','roomMaxOccupancy'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('input', checkRoomImageBtnEnable);
+        }
+      });
+      // 初始檢查
+      checkRoomImageBtnEnable();
     </script>
 </body>
 </html>
