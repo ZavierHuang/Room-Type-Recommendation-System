@@ -75,12 +75,18 @@
               </div>
               <div class="mb-3">
                 <label for="roomMaxOccupancy" class="form-label">床數</label>
-                <input type="text" class="form-control" id="roomMaxOccupancy" name="maxOccupancy" required>
+                <input type="number" class="form-control" id="roomMaxOccupancy" name="maxOccupancy" required>
               </div>
               <button type="submit" class="btn btn-primary w-100 mb-2">送出</button>
               <button type="button" class="btn btn-secondary w-100 mb-2" id="autoFillBtn">自動推薦</button>
               <button type="button" class="btn btn-outline-danger w-100" id="clearAllBtn">全部清空</button>
             </form>
+            <!-- Pending Circle -->
+            <div class="pending-circle-center" id="pendingCircle" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:9999;">
+              <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -88,37 +94,42 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
       document.getElementById('autoFillBtn').addEventListener('click', function() {
-        // 先清空所有欄位
         document.getElementById('roomName').value = '';
-        document.getElementById('roomPrice').value = '';
-        document.getElementById('roomArea').value = '';
+        document.getElementById('roomPrice').value = 0;
+        document.getElementById('roomArea').value = 0;
         document.getElementById('roomFeatures').value = '';
         document.getElementById('roomStyle').value = '';
-        document.getElementById('roomMaxOccupancy').value = '';
+        document.getElementById('roomMaxOccupancy').value = 0;
+        // 顯示 Pending Circle
+        var pendingCircle = document.getElementById('pendingCircle');
+        if (pendingCircle) pendingCircle.style.display = 'flex';
         // 再進行自動推薦
         fetch('/auto_recommend')
           .then(response => response.json())
           .then(data => {
             if (data.error) {
+              if (pendingCircle) pendingCircle.style.display = 'none';
               alert(data.error);
               return;
             }
             console.log(data);
             document.getElementById('roomFeatures').value = Array.isArray(data.features) ? data.features.join('、') : (data.features || '');
             document.getElementById('roomName').value = data.name || '';
-            document.getElementById('roomPrice').value = data.price || '';
-            document.getElementById('roomArea').value = data.area || '';
+            document.getElementById('roomPrice').value = data.price || 0;
+            document.getElementById('roomArea').value = data.area || 0;
             document.getElementById('roomStyle').value = data.style || '';
-            document.getElementById('roomMaxOccupancy').value = data.maxOccupancy || '';
+            document.getElementById('roomMaxOccupancy').value = data.maxOccupancy || 0;
+            // 填入資料後 Pending Circle 自動消失
+            if (pendingCircle) pendingCircle.style.display = 'none';
           });
       });
       document.getElementById('clearAllBtn').addEventListener('click', function() {
         document.getElementById('roomName').value = '';
-        document.getElementById('roomPrice').value = '';
-        document.getElementById('roomArea').value = '';
+        document.getElementById('roomPrice').value = 0;
+        document.getElementById('roomArea').value = 0;
         document.getElementById('roomFeatures').value = '';
         document.getElementById('roomStyle').value = '';
-        document.getElementById('roomMaxOccupancy').value = '';
+        document.getElementById('roomMaxOccupancy').value = 0;
       });
     </script>
 </body>
