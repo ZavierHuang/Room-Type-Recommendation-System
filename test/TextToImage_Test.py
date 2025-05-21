@@ -3,10 +3,11 @@ import os
 
 from tqdm import tqdm
 
-from Configure import ROOT
 from imageAI.Text2Image import Text2Image
 import json
 import re
+import pathlib
+import unittest
 
 class TextToImageTest(unittest.TestCase):
     def normalize(self, text):
@@ -14,6 +15,8 @@ class TextToImageTest(unittest.TestCase):
         return re.sub(r'[^A-Za-z0-9]', '', text)
 
     def setUp(self):
+        self.ROOT = pathlib.Path(__file__).parent.parent
+        ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
         jsonData = {
             "name": "和式套房",
             "price": "5000",
@@ -49,7 +52,7 @@ class TextToImageTest(unittest.TestCase):
         self.assertTrue(os.path.exists(self.text2Image.getImageFilePath()))
 
     def test_text_to_image_batch(self):
-        with open(os.path.join(ROOT, 'static/rooms.json'), 'r', encoding='utf-8') as jsonFile:
+        with open(os.path.join(self.ROOT, 'static/rooms.json'), 'r', encoding='utf-8') as jsonFile:
             data = json.load(jsonFile)
 
         counter = 0
@@ -65,12 +68,47 @@ class TextToImageTest(unittest.TestCase):
             item['img'] = imageFilePath
             counter += 1
 
-        with open(os.path.join(ROOT, 'static/rooms.json'), 'w', encoding='utf-8') as jsonFile:
+        with open(os.path.join(self.ROOT, 'static/rooms.json'), 'w', encoding='utf-8') as jsonFile:
             jsonFile.write(json.dumps(data, indent=4, ensure_ascii=False))
 
         for item in data:
             self.assertNotEqual(len(item['img']), 0)
-            self.assertTrue(os.path.exists(os.path.join(ROOT, item['img'])))
+            self.assertTrue(os.path.exists(os.path.join(self.ROOT, item['img'])))
+
+    def test_set_and_get_prompt(self):
+        self.text2Image.setPrompt('測試用prompt')
+        self.assertEqual(self.text2Image.getPrompt(), '測試用prompt')
+
+    def test_set_and_get_json_data(self):
+        new_json = {
+            "name": "現代雙人房",
+            "price": "4000",
+            "area": "25",
+            "features": "現代設計、落地窗",
+            "style": "現代",
+            "maxOccupancy": "2人房"
+        }
+        self.text2Image.setJsonData(new_json)
+        self.assertEqual(self.text2Image.getJsonData(), new_json)
+
+    def test_set_and_get_image_file_path(self):
+        new_path = 'static/image/test2.png'
+        self.text2Image.setImageFilePath(new_path)
+        self.assertTrue(self.text2Image.getImageFilePath().endswith('static/image/test2.png'))
+
+    def test_generate_image_mock(self):
+        # 測試 generateImage 方法是否能被呼叫（不實際產生圖檔）
+        self.text2Image.prompt = 'A modern room.'
+        class DummyPipe:
+            def __call__(self, prompt):
+                class DummyResult:
+                    images = [type('img', (), {'resize': lambda self, s: self, 'show': lambda self: None, 'save': lambda self, p: None})()]
+                return DummyResult()
+        self.text2Image.pipe = DummyPipe()
+        try:
+            self.text2Image.generateImage()
+        except Exception as e:
+            self.fail(f"generateImage raised Exception unexpectedly: {e}")
 
 
 

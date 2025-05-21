@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-from RAG import RAGPipeline
+from src.RAG import RAGPipeline
 import json
 
 app = Flask(__name__)
@@ -22,3 +22,6 @@ if __name__ == '__main__':
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.jinja_env.auto_reload = True
     app.run(debug=True)
+
+#.venv\Scripts\activate  
+# Ctrl + ALT + B = Github Copilot

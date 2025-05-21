@@ -4,12 +4,12 @@ import os
 from diffusers import StableDiffusionPipeline, EulerDiscreteScheduler
 import torch
 from deep_translator import GoogleTranslator
-
-from Configure import ROOT
+import pathlib
 
 
 class Text2Image:
     def __init__(self, jsonData, imageFilePath):
+        self.ROOT = pathlib.Path(__file__).resolve().parent.parent
         self.jsonData = jsonData
         self.prompt = None
         self.imageFilePath = imageFilePath
@@ -21,7 +21,7 @@ class Text2Image:
         self.jsonData = jsonData
 
     def setImageFilePath(self, imageFilePath):
-        self.imageFilePath = os.path.join(ROOT, imageFilePath)
+        self.imageFilePath = os.path.join(self.ROOT, imageFilePath)
 
     def getPrompt(self):
         return self.prompt

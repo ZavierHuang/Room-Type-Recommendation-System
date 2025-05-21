@@ -1,1 +1,0 @@
-ROOT = f'F:\GITHUB\Room-Type-Recommendation-System'
