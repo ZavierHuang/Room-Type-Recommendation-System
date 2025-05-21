@@ -12,7 +12,11 @@
         <div class="container-fluid">
             <a class="navbar-brand" href="/">房型推薦系統</a>
             <div class="d-flex">
-                <a href="/login" class="btn btn-outline-primary">登入</a>
+                {% if session.get('logged_in') %}
+                    <a href="/logout" class="btn btn-outline-danger">登出</a>
+                {% else %}
+                    <a href="/login" class="btn btn-outline-primary">登入</a>
+                {% endif %}
             </div>
         </div>
     </nav>

@@ -12,7 +12,11 @@
         <div class="container-fluid">
             <a class="navbar-brand" href="/">房型推薦系統</a>
             <div class="d-flex">
-                <a href="/login" class="btn btn-outline-primary">登入</a>
+                {% if session.get('logged_in') %}
+                    <a href="/logout" class="btn btn-outline-danger">登出</a>
+                {% else %}
+                    <a href="/login" class="btn btn-outline-primary">登入</a>
+                {% endif %}
             </div>
         </div>
     </nav>
@@ -108,11 +112,11 @@
     <script>
       document.getElementById('autoFillBtn').addEventListener('click', function() {
         document.getElementById('roomName').value = '';
-        document.getElementById('roomPrice').value = 0;
-        document.getElementById('roomArea').value = 0;
+        document.getElementById('roomPrice').value = '';
+        document.getElementById('roomArea').value = '';
         document.getElementById('roomFeatures').value = '';
         document.getElementById('roomStyle').value = '';
-        document.getElementById('roomMaxOccupancy').value = 0;
+        document.getElementById('roomMaxOccupancy').value = '';
         // 顯示 Pending Circle
         var pendingCircle = document.getElementById('pendingCircle');
         if (pendingCircle) pendingCircle.style.display = 'flex';
@@ -186,6 +190,34 @@
           if (pendingCircle) pendingCircle.style.display = 'none';
           alert('圖片生成失敗');
         });
+      });
+      document.getElementById('addRoomForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var data = {
+          name: document.getElementById('roomName').value,
+          price: document.getElementById('roomPrice').value,
+          area: document.getElementById('roomArea').value,
+          features: document.getElementById('roomFeatures').value,
+          style: document.getElementById('roomStyle').value,
+          maxOccupancy: document.getElementById('roomMaxOccupancy').value,
+          // 圖片預覽有值就帶入
+          image: document.getElementById('roomImagePreview').src ? document.getElementById('roomImagePreview').src : ''
+        };
+        fetch('/add_room', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+          if (result.success) {
+            alert('新增成功!');
+            location.reload();
+          } else {
+            alert(result.error || '新增失敗');
+          }
+        })
+        .catch(() => alert('新增失敗'));
       });
       function checkRoomImageBtnEnable() {
         var requiredFields = [
