@@ -70,9 +70,3 @@ class TestRAGPipeline(unittest.TestCase):
         result = self.rag.query('請推薦三人房')
         self.assertIn('conclusion', result)
         self.assertIn('rooms', result)
-
-
-
-
-if __name__ == '__main__':
-    unittest.main()
