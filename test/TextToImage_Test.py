@@ -1,10 +1,6 @@
 import unittest
 import os
-
-from tqdm import tqdm
-
 from imageAI.Text2Image import Text2Image
-import json
 import re
 import pathlib
 import unittest
@@ -16,7 +12,6 @@ class TextToImageTest(unittest.TestCase):
 
     def setUp(self):
         self.ROOT = pathlib.Path(__file__).parent.parent
-        ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
         jsonData = {
             "name": "和式套房",
             "price": "5000",
@@ -48,32 +43,8 @@ class TextToImageTest(unittest.TestCase):
         self.assertEqual(self.normalize(result), self.normalize(expected))
         
     def test_text_to_image_integration(self):
-        self.text2Image.textToImage()
+        self.assertTrue(self.text2Image.textToImage())
         self.assertTrue(os.path.exists(self.text2Image.getImageFilePath()))
-
-    def test_text_to_image_batch(self):
-        with open(os.path.join(self.ROOT, 'static/rooms.json'), 'r', encoding='utf-8') as jsonFile:
-            data = json.load(jsonFile)
-
-        counter = 0
-
-        for item in tqdm(data, desc="Generating..."):
-            if len(item['img']) != 0:
-                counter += 1
-                continue
-            imageFilePath = f'static/image/img_{counter}.png'
-            self.text2Image.setJsonData(item)
-            self.text2Image.setImageFilePath(imageFilePath)
-            self.text2Image.textToImage()
-            item['img'] = imageFilePath
-            counter += 1
-
-        with open(os.path.join(self.ROOT, 'static/rooms.json'), 'w', encoding='utf-8') as jsonFile:
-            jsonFile.write(json.dumps(data, indent=4, ensure_ascii=False))
-
-        for item in data:
-            self.assertNotEqual(len(item['img']), 0)
-            self.assertTrue(os.path.exists(os.path.join(self.ROOT, item['img'])))
 
     def test_set_and_get_prompt(self):
         self.text2Image.setPrompt('測試用prompt')

@@ -1,8 +1,0 @@
-langchain~=0.3.25
-langchain_community
-flask
-fastembed
-deep_translator
-diffusers
-torch
-transformers

@@ -1,4 +1,3 @@
-import json
 import os
 
 from diffusers import StableDiffusionPipeline, EulerDiscreteScheduler
@@ -57,12 +56,17 @@ class Text2Image:
         return prompt
     
     def generateImage(self):
-        image = self.pipe(self.prompt).images[0]
-        print("image:", image)
-        new_size = (1000, 512)
-        resized_image = image.resize(new_size)
-        resized_image.show()
-        resized_image.save(self.imageFilePath)
+        try:
+            image = self.pipe(self.prompt).images[0]
+            print("image:", image)
+            new_size = (1000, 512)
+            resized_image = image.resize(new_size)
+            # resized_image.show()
+            resized_image.save(self.imageFilePath)
+            return True
+        except Exception as e:
+            print(f"Error generating image: {e}")
+            return False
 
     def textToImage(self):
         self.model_id = "stabilityai/stable-diffusion-2"
@@ -73,4 +77,4 @@ class Text2Image:
         self.prompt = self.convertToSentenceFromJson()
         self.prompt = self.TranslatorAPI()
 
-        self.generateImage()
+        return self.generateImage()
