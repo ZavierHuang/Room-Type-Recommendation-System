@@ -70,3 +70,13 @@ class TestRAGPipeline(unittest.TestCase):
         result = self.rag.query('請推薦三人房')
         self.assertIn('conclusion', result)
         self.assertIn('rooms', result)
+
+    def test_auto_recommend_room(self):
+        result = self.rag.auto_recommend_room()
+        print(result)
+        self.assertIn('name', result)
+        self.assertIn('price', result)
+        self.assertIn('area', result)
+        self.assertIn('features', result)
+        self.assertIn('style', result)
+        self.assertIn('maxOccupancy', result)

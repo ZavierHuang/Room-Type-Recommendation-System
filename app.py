@@ -36,6 +36,14 @@ def blank():
         rooms = json.load(f)
     return render_template('blank.html', rooms=rooms)
 
+@app.route('/auto_recommend', methods=['GET'])
+def auto_recommend():
+    room = rag.auto_recommend_room()
+    if room:
+        return jsonify(room)
+    else:
+        return jsonify({'error': '無法推薦房型'}), 404
+
 if __name__ == '__main__':
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.jinja_env.auto_reload = True

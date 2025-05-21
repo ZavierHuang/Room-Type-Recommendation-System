@@ -18,6 +18,9 @@
     </nav>
 
     <div class="container mt-4">
+        <div class="d-flex justify-content-end mb-2">
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addRoomModal">ADD</button>
+        </div>
         <h1 class="mb-4 text-center">房型推薦系統</h1>
         <div class="row">
             {% for room in rooms %}
@@ -39,5 +42,84 @@
             {% endfor %}
         </div>
     </div>
+
+    <!-- ADD Modal -->
+    <div class="modal fade" id="addRoomModal" tabindex="-1" aria-labelledby="addRoomModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addRoomModalLabel">新增房型</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="addRoomForm">
+              <div class="mb-3">
+                <label for="roomName" class="form-label">名稱</label>
+                <input type="text" class="form-control" id="roomName" name="name" required>
+              </div>
+              <div class="mb-3">
+                <label for="roomPrice" class="form-label">價格</label>
+                <input type="number" class="form-control" id="roomPrice" name="price" required>
+              </div>
+              <div class="mb-3">
+                <label for="roomArea" class="form-label">面積</label>
+                <input type="number" class="form-control" id="roomArea" name="area" required>
+              </div>
+              <div class="mb-3">
+                <label for="features" class="form-label">特色</label>
+                <input type="text" class="form-control" id="roomFeatures" name="features" required>
+              </div>
+              <div class="mb-3">
+                <label for="roomStyle" class="form-label">風格</label>
+                <input type="text" class="form-control" id="roomStyle" name="style" required>
+              </div>
+              <div class="mb-3">
+                <label for="roomMaxOccupancy" class="form-label">床數</label>
+                <input type="text" class="form-control" id="roomMaxOccupancy" name="maxOccupancy" required>
+              </div>
+              <button type="submit" class="btn btn-primary w-100 mb-2">送出</button>
+              <button type="button" class="btn btn-secondary w-100 mb-2" id="autoFillBtn">自動推薦</button>
+              <button type="button" class="btn btn-outline-danger w-100" id="clearAllBtn">全部清空</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      document.getElementById('autoFillBtn').addEventListener('click', function() {
+        // 先清空所有欄位
+        document.getElementById('roomName').value = '';
+        document.getElementById('roomPrice').value = '';
+        document.getElementById('roomArea').value = '';
+        document.getElementById('roomFeatures').value = '';
+        document.getElementById('roomStyle').value = '';
+        document.getElementById('roomMaxOccupancy').value = '';
+        // 再進行自動推薦
+        fetch('/auto_recommend')
+          .then(response => response.json())
+          .then(data => {
+            if (data.error) {
+              alert(data.error);
+              return;
+            }
+            console.log(data);
+            document.getElementById('roomFeatures').value = Array.isArray(data.features) ? data.features.join('、') : (data.features || '');
+            document.getElementById('roomName').value = data.name || '';
+            document.getElementById('roomPrice').value = data.price || '';
+            document.getElementById('roomArea').value = data.area || '';
+            document.getElementById('roomStyle').value = data.style || '';
+            document.getElementById('roomMaxOccupancy').value = data.maxOccupancy || '';
+          });
+      });
+      document.getElementById('clearAllBtn').addEventListener('click', function() {
+        document.getElementById('roomName').value = '';
+        document.getElementById('roomPrice').value = '';
+        document.getElementById('roomArea').value = '';
+        document.getElementById('roomFeatures').value = '';
+        document.getElementById('roomStyle').value = '';
+        document.getElementById('roomMaxOccupancy').value = '';
+      });
+    </script>
 </body>
 </html>

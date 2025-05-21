@@ -231,3 +231,74 @@ class RAGPipeline:
             "rooms": [],
             "conclusion": "你好，我是一個飯店推薦助手，目前只提供房型相關的建議喔！"
         }
+
+    def auto_recommend_room(self):
+        """
+        使用 LLM (gemma3:4b) 生成推薦房型的五個欄位資料，若有缺漏則重新生成直到齊全。
+        若 LLM 回傳的欄位名稱為英文 'area' 或中文 '面積'，都能正確對應。
+        並避免推薦內容重複（同一房型名稱）。
+        """
+        import json as pyjson
+        import re
+        required_fields = ['name', 'price', 'area', 'features', 'style', 'maxOccupancy']
+        max_retry = 5
+        used_names = set()
+        for _ in range(max_retry):
+            prompt = ChatPromptTemplate.from_messages([
+                ("system",
+                 "你是一位專業的飯店房型推薦助手，請根據資料庫內容，推薦一個最適合的房型，並只回傳一個 JSON 格式，欄位包含 name, price, area, features, style, maxOccupancy，area和price只回傳數字，maxOccupancy則回傳「n人房」，n是數字，不要有多餘說明。請勿推薦與前次相同的房型名稱。"),
+                ("user", "請推薦一個房型，並只回傳 JSON 格式資料。")
+            ])
+            chain = prompt | self.llm
+            result = chain.invoke({})
+            try:
+                match = re.search(r'\{.*\}', result, re.DOTALL)
+                if match:
+                    json_str = match.group(0)
+                    data = pyjson.loads(json_str)
+                else:
+                    data = pyjson.loads(result)
+                # 容錯：將中文欄位名轉為英文
+                if '面積' in data and 'area' not in data:
+                    data['area'] = data['面積']
+                # features 欄位若為 list，轉為「、」分隔的字串
+                if 'features' in data and isinstance(data['features'], list):
+                    data['features'] = '、'.join(data['features'])
+                # 檢查所有欄位
+                if all(field in data and data[field] for field in required_fields):
+                    # 檢查是否重複
+                    name = data['name']
+                    if name in used_names:
+                        continue
+                    used_names.add(name)
+                    return {k: data[k] for k in required_fields}
+            except Exception:
+                continue
+        # 若多次失敗，回傳預設最便宜房型
+        sorted_rooms = sorted(self.data, key=lambda x: int(x['price']))
+        for room in sorted_rooms:
+            if room['name'] not in used_names:
+                features = room['features']
+                if isinstance(features, list):
+                    features = '、'.join(features)
+                return {
+                    'name': room['name'],
+                    'price': room['price'],
+                    'area': room['area'],
+                    'features': features,
+                    'style': room['style'],
+                    'maxOccupancy': room['maxOccupancy']
+                }
+        # fallback: 回傳最便宜的第一個
+        room = sorted_rooms[0]
+        features = room['features']
+        if isinstance(features, list):
+            features = '、'.join(features)
+        return {
+            'name': room['name'],
+            'price': room['price'],
+            'area': room['area'],
+            'features': features,
+            'style': room['style'],
+            'maxOccupancy': room['maxOccupancy']
+        }
