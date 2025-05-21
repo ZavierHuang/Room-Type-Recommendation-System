@@ -24,6 +24,15 @@ class RAGPipeline:
         self.llm = Ollama(model="gemma3:4b")
         self.used_names = set()  # 新增：用於追蹤所有已推薦過的房型名稱
 
+    def getMaxID(self):
+        return self.maxID
+
+    def getRoomData(self):
+        return self.data
+    
+    def addNewRoom(self, room):
+        self.data.append(room)
+
     def classify_intent(self, question):
         prompt = ChatPromptTemplate.from_messages([
             ("system",

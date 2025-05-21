@@ -149,6 +149,16 @@
         document.getElementById('roomFeatures').value = '';
         document.getElementById('roomStyle').value = '';
         document.getElementById('roomMaxOccupancy').value = '';
+        // 圖片預覽初始化
+        var img = document.getElementById('roomImagePreview');
+        var text = document.getElementById('imagePreviewText');
+        if (img) {
+          img.src = '';
+          img.style.display = 'none';
+        }
+        if (text) {
+          text.style.display = 'block';
+        }
         // 清空後檢查按鈕狀態
         checkRoomImageBtnEnable();
       });
@@ -192,6 +202,13 @@
         });
       });
       document.getElementById('addRoomForm').addEventListener('submit', function(e) {
+        // 檢查圖片是否有生成
+        var img = document.getElementById('roomImagePreview');
+        if (!img || !img.src || img.src === '' || img.style.display === 'none') {
+          alert('房型圖片尚未生成！');
+          e.preventDefault();
+          return;
+        }
         e.preventDefault();
         var data = {
           name: document.getElementById('roomName').value,
@@ -201,7 +218,7 @@
           style: document.getElementById('roomStyle').value,
           maxOccupancy: document.getElementById('roomMaxOccupancy').value,
           // 圖片預覽有值就帶入
-          image: document.getElementById('roomImagePreview').src ? document.getElementById('roomImagePreview').src : ''
+          image: img.src ? img.src : ''
         };
         fetch('/add_room', {
           method: 'POST',
