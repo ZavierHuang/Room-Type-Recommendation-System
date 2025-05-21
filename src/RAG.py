@@ -20,6 +20,7 @@ class RAGPipeline:
         self.vectorstore = Chroma.from_documents(self.docs, embeddings)
         self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 10})
         self.llm = Ollama(model="gemma3:4b")
+        self.used_names = set()  # 新增：用於追蹤所有已推薦過的房型名稱
 
     def classify_intent(self, question):
         prompt = ChatPromptTemplate.from_messages([
@@ -232,25 +233,36 @@ class RAGPipeline:
             "conclusion": "你好，我是一個飯店推薦助手，目前只提供房型相關的建議喔！"
         }
 
-    def auto_recommend_room(self):
+    def auto_recommend_room(self, prev_name=None, reset_used_names=False):
         """
         使用 LLM (gemma3:4b) 生成推薦房型的五個欄位資料，若有缺漏則重新生成直到齊全。
         若 LLM 回傳的欄位名稱為英文 'area' 或中文 '面積'，都能正確對應。
         並避免推薦內容重複（同一房型名稱）。
+        新增：將上一輪推薦的房型名稱（prev_name）加入 prompt，並明確要求 LLM 不要推薦與上一輪相同或相似的房型。
+        新增：self.used_names 追蹤所有已推薦過的房型名稱，可選擇重設。
         """
         import json as pyjson
         import re
         required_fields = ['name', 'price', 'area', 'features', 'style', 'maxOccupancy']
         max_retry = 5
-        used_names = set()
+        if reset_used_names:
+            self.used_names = set()
+        if prev_name:
+            self.used_names.add(prev_name)
         for _ in range(max_retry):
+            system_msg = (
+                "你是一位專業的飯店房型推薦助手，請根據資料庫內容，推薦一個最適合的房型，並只回傳一個 JSON 格式，欄位包含 name, price, area, features, style, maxOccupancy。area、price、maxOccupancy只回傳數字，剩下內容請轉為「繁體中文」，不要有多餘說明。"
+                "請勿推薦與前次相同或相似的房型名稱。"
+            )
+            if prev_name:
+                system_msg += f"\n上一輪推薦的房型名稱為：{prev_name}，請勿推薦與其相同或相似的房型。"
             prompt = ChatPromptTemplate.from_messages([
-                ("system",
-                 "你是一位專業的飯店房型推薦助手，請根據資料庫內容，推薦一個最適合的房型，並只回傳一個 JSON 格式，欄位包含 name, price, area, features, style, maxOccupancy，area和price只回傳數字，maxOccupancy則回傳「n人房」，n是數字，不要有多餘說明。請勿推薦與前次相同的房型名稱。"),
+                ("system", system_msg),
                 ("user", "請推薦一個房型，並只回傳 JSON 格式資料。")
             ])
             chain = prompt | self.llm
             result = chain.invoke({})
+
             try:
                 match = re.search(r'\{.*\}', result, re.DOTALL)
                 if match:
@@ -258,47 +270,78 @@ class RAGPipeline:
                     data = pyjson.loads(json_str)
                 else:
                     data = pyjson.loads(result)
-                # 容錯：將中文欄位名轉為英文
-                if '面積' in data and 'area' not in data:
-                    data['area'] = data['面積']
-                # features 欄位若為 list，轉為「、」分隔的字串
-                if 'features' in data and isinstance(data['features'], list):
-                    data['features'] = '、'.join(data['features'])
+
+                # maxOccupancy 欄位只保留數字，支援中文數字
+                if 'maxOccupancy' in data:
+                    data['maxOccupancy'] = self._parse_max_occupancy(data['maxOccupancy'])
+
                 # 檢查所有欄位
                 if all(field in data and data[field] for field in required_fields):
                     # 檢查是否重複
                     name = data['name']
-                    if name in used_names:
+                    if name in self.used_names:
                         continue
-                    used_names.add(name)
+                    self.used_names.add(name)
                     return {k: data[k] for k in required_fields}
+                
             except Exception:
                 continue
+            
         # 若多次失敗，回傳預設最便宜房型
         sorted_rooms = sorted(self.data, key=lambda x: int(x['price']))
         for room in sorted_rooms:
-            if room['name'] not in used_names:
+            if room['name'] not in self.used_names:
                 features = room['features']
                 if isinstance(features, list):
                     features = '、'.join(features)
+                self.used_names.add(room['name'])
+                max_occ = self._parse_max_occupancy(room['maxOccupancy'])
                 return {
                     'name': room['name'],
                     'price': room['price'],
                     'area': room['area'],
                     'features': features,
                     'style': room['style'],
-                    'maxOccupancy': room['maxOccupancy']
+                    'maxOccupancy': max_occ
                 }
         # fallback: 回傳最便宜的第一個
         room = sorted_rooms[0]
         features = room['features']
         if isinstance(features, list):
             features = '、'.join(features)
+        self.used_names.add(room['name'])
+        max_occ = self._parse_max_occupancy(room['maxOccupancy'])
         return {
             'name': room['name'],
             'price': room['price'],
             'area': room['area'],
             'features': features,
             'style': room['style'],
-            'maxOccupancy': room['maxOccupancy']
+            'maxOccupancy': max_occ
         }
+
+    def _parse_max_occupancy(self, value):
+        import re
+        zh2num = {'零':0,'一':1,'二':2,'兩':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10}
+        value = str(value)
+        match = re.search(r'\d+', value)
+        if match:
+            return int(match.group(0))
+        num = 0
+        if value:
+            if value.startswith('十'):
+                num = 10
+                if len(value) > 1 and value[1] in zh2num:
+                    num += zh2num[value[1]]
+            elif '十' in value:
+                parts = value.split('十')
+                if parts[0] in zh2num:
+                    num = zh2num[parts[0]] * 10
+                if len(parts) > 1 and parts[1] and parts[1][0] in zh2num:
+                    num += zh2num[parts[1][0]]
+            else:
+                for k in zh2num:
+                    if k in value:
+                        num = zh2num[k]
+                        break
+        return num if num > 0 else 1
