@@ -542,3 +542,29 @@ class TestRAGPipeline(unittest.TestCase):
 
         self.assertIn("豪華房", result)
         mock_chain.invoke.assert_called_once_with({"input": question, "rooms": rooms_summary})
+
+    def test_init_loads_data_and_sets_attributes(self):
+        import os
+        import tempfile
+        import json
+        from src.RAG import RAGPipeline
+        # 建立臨時 json 檔案
+        data = [
+            {"name": "A", "price": 1000, "area": 10, "features": "大", "style": "工業風", "maxOccupancy": 2}
+        ]
+        with tempfile.NamedTemporaryFile('w+', delete=False, suffix='.json', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False)
+            f.flush()
+            path = f.name
+
+        try:
+            rag = RAGPipeline(path)
+            self.assertEqual(rag.data, data)
+            self.assertTrue(hasattr(rag, "docs"))
+            self.assertTrue(hasattr(rag, "vectorstore"))
+            self.assertTrue(hasattr(rag, "retriever"))
+            self.assertTrue(hasattr(rag, "llm"))
+            self.assertTrue(hasattr(rag, "used_names"))
+        finally:
+            os.remove(path)
+
