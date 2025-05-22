@@ -23,6 +23,8 @@ class RAGPipeline:
         self.llm = Ollama(model="gemma3:4b")
         self.used_names = set()  # 新增：用於追蹤所有已推薦過的房型名稱
 
+
+
     def classify_intent(self, question):
         prompt = ChatPromptTemplate.from_messages([
             ("system",
@@ -80,9 +82,10 @@ class RAGPipeline:
         styles = []
 
         for item in self.data:
-            if item["style"] not in styles:
+            if item["style"] is not None and len(item["style"])!=0 and item["style"] not in styles:
                 styles.append(item["style"])
-        return [style for style in styles if style in text]
+
+        return [style for style in styles if style is not None and style in text]
 
     def sort_by_style_match(self, docs, style_keywords):
         if not style_keywords:
@@ -227,30 +230,22 @@ class RAGPipeline:
             "conclusion": "你好，我是一個飯店推薦助手，目前只提供房型相關的建議喔！"
         }
 
-    def auto_recommend_room(self, prev_name=None, reset_used_names=False):
-        """
-        使用 LLM (gemma3:4b) 生成推薦房型的五個欄位資料，若有缺漏則重新生成直到齊全。
-        若 LLM 回傳的欄位名稱為英文 'area' 或中文 '面積'，都能正確對應。
-        並避免推薦內容重複（同一房型名稱）。
-        新增：將上一輪推薦的房型名稱（prev_name）加入 prompt，並明確要求 LLM 不要推薦與上一輪相同或相似的房型。
-        新增：self.used_names 追蹤所有已推薦過的房型名稱，可選擇重設。
-        """
 
+    def auto_recommend_room(self):
         required_fields = ['name', 'price', 'area', 'features', 'style', 'maxOccupancy']
         max_retry = 5
 
-        if reset_used_names:
-            self.used_names = set()
-        if prev_name:
-            self.used_names.add(prev_name)
+        self.used_names = set()
+
+        existing_names = {room['name'] for room in self.data if 'name' in room}
+        self.used_names.update(existing_names)
 
         for _ in range(max_retry):
             system_msg = (
-                "你是一位專業的飯店房型推薦助手，請根據資料庫內容，推薦一個最適合的房型，並只回傳一個 JSON 格式，欄位包含 name, price, area, features, style, maxOccupancy。area、price、maxOccupancy只回傳數字，剩下內容請轉為「繁體中文」，不要有多餘說明。"
-                "請勿推薦與前次相同或相似的房型名稱。"
+                "你是一位專業的飯店房型推薦助手，請根據資料庫內容，推薦一個最適合的房型，並只回傳一個 JSON 格式，欄位包含 name, price, area, features, style, maxOccupancy。"
+                "area、price、maxOccupancy只回傳數字，剩下內容請轉為「繁體中文」，不要有多餘說明。"
+                "請勿推薦與前次相同或相似的房型名稱，也不要與資料庫中已有的房型名稱重複。"
             )
-            if prev_name:
-                system_msg += f"\n上一輪推薦的房型名稱為：{prev_name}，請勿推薦與其相同或相似的房型。"
 
             prompt = ChatPromptTemplate.from_messages([
                 ("system", system_msg),
@@ -260,20 +255,30 @@ class RAGPipeline:
             result = chain.invoke({})
 
             match = re.search(r'\{.*\}', result, re.DOTALL)
+
+            if not match:
+                continue
+
             json_str = match.group(0)
-            data = pyjson.loads(json_str)
+            try:
+                data = pyjson.loads(json_str)
+            except pyjson.JSONDecodeError:
+                continue
+
+            print("json_str:", json_str)
+            print("data:", data)
 
             if 'maxOccupancy' in data:
                 data['maxOccupancy'] = self._parse_max_occupancy(data['maxOccupancy'])
 
-            # 檢查所有欄位
             if all(field in data and data[field] for field in required_fields):
-                # 檢查是否重複
                 name = data['name']
                 if name in self.used_names:
                     continue
                 self.used_names.add(name)
                 return {k: data[k] for k in required_fields}
+
+        return None
 
     def _parse_max_occupancy(self, value):
         import re
