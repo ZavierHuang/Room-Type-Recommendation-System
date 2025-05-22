@@ -13,23 +13,8 @@ class Text2Image:
         self.prompt = None
         self.imageFilePath = imageFilePath
 
-    def setPrompt(self, prompt):
-        self.prompt = prompt
-
     def setJsonData(self, jsonData):
         self.jsonData = jsonData
-
-    def setImageFilePath(self, imageFilePath):
-        self.imageFilePath = os.path.join(self.ROOT, imageFilePath)
-
-    def getPrompt(self):
-        return self.prompt
-
-    def getImageFilePath(self):
-        return self.imageFilePath
-
-    def getJsonData(self):
-        return self.jsonData
 
     def TranslatorAPI(self):
         try:
@@ -51,6 +36,16 @@ class Text2Image:
             "maxOccupancy": "2人房"
         }
         """
+        if not self.jsonData:
+            return None
+
+        if (not self.jsonData.get("name") or
+                not self.jsonData.get("area") or
+                not self.jsonData.get("features") or
+                not self.jsonData.get("style") or
+                not self.jsonData.get("maxOccupancy")):
+            return None
+
         prompt = f"""一張高品質的{self.jsonData['name']}室內照片，{self.jsonData['area']}平方米，包含{self.jsonData['features']}，{self.jsonData['maxOccupancy']}，{self.jsonData['style']}風格。"""
 
         return prompt
@@ -58,7 +53,6 @@ class Text2Image:
     def generateImage(self):
         try:
             image = self.pipe(self.prompt).images[0]
-            print("image:", image)
             new_size = (1000, 512)
             resized_image = image.resize(new_size)
             # resized_image.show()
@@ -75,6 +69,9 @@ class Text2Image:
         self.pipe = self.pipe.to("cuda")
 
         self.prompt = self.convertToSentenceFromJson()
-        self.prompt = self.TranslatorAPI()
 
-        return self.generateImage()
+        if self.prompt:
+            self.prompt = self.TranslatorAPI()
+            return self.generateImage() if self.prompt is not None else False
+
+        return False
