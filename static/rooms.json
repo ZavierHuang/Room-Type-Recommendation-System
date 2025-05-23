@@ -198,45 +198,5 @@
         "style": "自然",
         "maxOccupancy": "2人房",
         "image": "../static/image/img_19.png"
-    },
-    {
-        "id": 20,
-        "name": "海景套房",
-        "price": "2800",
-        "area": "60",
-        "features": "私人陽台、獨立泡泡浴、海景視角、客用迷你吧",
-        "style": "現代奢華",
-        "maxOccupancy": "2人房",
-        "image": "../static/image/img_20.png"
-    },
-    {
-        "id": 21,
-        "name": "商務辦公房",
-        "price": "3800",
-        "area": "22",
-        "features": "辦公桌、檯燈、高速WiFi",
-        "style": "商務",
-        "maxOccupancy": "1人房",
-        "image": "../static/image/img_21.png"
-    },
-    {
-        "id": 22,
-        "name": "海景連棟別墅",
-        "price": "9500",
-        "area": "150",
-        "features": "私人花園、陽台、獨立衛浴、冰箱、Wi-Fi",
-        "style": "現代簡約",
-        "maxOccupancy": "4人房",
-        "image": "../static/image/img_22.png"
-    },
-    {
-        "id": 23,
-        "name": "海景閣套房",
-        "price": "2800",
-        "area": "50",
-        "features": "落地窗、私人陽台、獨立泡泡浴、客用迷你吧",
-        "style": "現代奢華",
-        "maxOccupancy": "2人房",
-        "image": "../static/image/img_23.png"
     }
 ]
