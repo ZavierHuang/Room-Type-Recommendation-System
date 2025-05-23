@@ -228,5 +228,15 @@
         "style": "現代簡約",
         "maxOccupancy": "4人房",
         "image": "../static/image/img_22.png"
+    },
+    {
+        "id": 23,
+        "name": "海景閣套房",
+        "price": "2800",
+        "area": "50",
+        "features": "落地窗、私人陽台、獨立泡泡浴、客用迷你吧",
+        "style": "現代奢華",
+        "maxOccupancy": "2人房",
+        "image": "../static/image/img_23.png"
     }
 ]

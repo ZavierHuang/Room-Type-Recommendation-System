@@ -197,6 +197,7 @@
           }
         })
         .catch(err => {
+          console.log(result); // 新增這行
           if (pendingCircle) pendingCircle.style.display = 'none';
           alert('圖片生成失敗');
         });

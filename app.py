@@ -74,7 +74,7 @@ def generate_room_image():
     success = t2i.textToImage()
     if not success:
         return jsonify({'error': '圖片生成失敗'}), 500
-    return jsonify({'image_url': os.path.join(ROOT, f'static/image/{image_filename}')})
+    return jsonify({'image_url': f'/static/image/{image_filename}'})
 
 @app.route('/add_room', methods=['POST'])
 def add_room():
@@ -86,12 +86,11 @@ def add_room():
     new_id = max([room['id'] for room in rooms], default=-1) + 1
     # 處理圖片路徑（如果是完整 URL 只取最後檔名）
     image_url = data.get('image', '')
-    if image_url and os.path.join(ROOT,'static/image/') in image_url:
-        image_path = image_url.split(os.path.join(ROOT, 'static/image/'))[-1]
-        image = os.path.join(ROOT, f'static/image/{image_path}')
+    if image_url and '/static/image/' in image_url:
+        image_filename = image_url.split('/static/image/')[-1].split('?')[0]  # 去除快取參數
+        image = os.path.join(ROOT, 'static', 'image', image_filename)
     else:
         return jsonify({'failure': False})
-        
     # 新房型資料
     new_room = {
         'id': new_id,
@@ -101,7 +100,7 @@ def add_room():
         'features': data.get('features', ''),
         'style': data.get('style', ''),
         'maxOccupancy': data.get('maxOccupancy', '') + '人房',
-        'image': image[:image.rfind('.')] + '.png' if image else '',
+        'image': f'../static/image/{image_filename}' if image else '',
     }
     rooms.append(new_room)
     # 寫回 JSON
