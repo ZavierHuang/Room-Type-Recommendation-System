@@ -1,4 +1,9 @@
 $(document).ready(function() {
+    // 頁面載入時預設關閉聊天側欄
+    $('#chat-sidebar').addClass('collapsed');
+    $('#chat-toggle-btn').show();
+    $('.container').removeClass('with-chat');
+
     $('#chat-header').click(function() {
         $('#chat-sidebar').addClass('collapsed');
         $('#chat-toggle-btn').show();
