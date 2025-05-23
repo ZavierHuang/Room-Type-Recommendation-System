@@ -127,3 +127,4 @@ if __name__ == '__main__':
     app.run(debug=True)
 
 # Ctrl + ALT + B = Github Copilot
+# coverage run --rcfile=.coveragerc -m pytest

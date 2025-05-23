@@ -1,10 +1,19 @@
 {
+    "python.defaultInterpreterPath": "C:\\Users\\islab\\anaconda3\\envs\\tensorflow_env\\python.exe",
     "python.testing.unittestArgs": [
         "-v",
         "-s",
         "./test",
         "-p",
-        "*test.py"
+        "*test.py",
+        "--cov=.",  // 覆蓋整個專案
+        "--cov-report=term",  // 終端顯示報告
+        "--cov-config=.coveragerc",
+        "--cov-report=html"   // 同時產生 htmlcov/index.html
+    ],
+    "python.analysis.exclude": [
+        "**/static/**",
+        "**/templates/**"
     ],
     "python.testing.pytestEnabled": false,
     "python.testing.unittestEnabled": true
