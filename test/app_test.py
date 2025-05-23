@@ -1,10 +1,25 @@
+import json
+import os
+import pathlib
 import unittest
-from src.app import app
+
+from app import app
+
 
 class AppTestCase(unittest.TestCase):
     def setUp(self):
+        self.ROOT = pathlib.Path(__file__).resolve().parent.parent
         app.config['TESTING'] = True
+
+        with open(os.path.join(self.ROOT, 'static/rooms.json'), 'r', encoding='utf-8') as jsonFile:
+            self.jsonData = json.load(jsonFile)
+
         self.client = app.test_client()
+
+
+    def tearDown(self):
+        with open(os.path.join(self.ROOT, 'static/rooms.json'), 'w', encoding='utf-8') as jsonFile:
+            jsonFile.write(json.dumps(self.jsonData, indent=4, ensure_ascii=False))
 
     def test_index(self):
         resp = self.client.get('/')
@@ -54,12 +69,33 @@ class AppTestCase(unittest.TestCase):
         resp = self.client.get('/auto_recommend')
         self.assertIn(resp.status_code, (200, 404))
 
+    def test_auto_recommend_fail(self):
+        import app
+        original_func = app.rag.auto_recommend_room
+        app.rag.auto_recommend_room = lambda: None
+        resp = self.client.get('/auto_recommend')
+        self.assertEqual(resp.status_code, 404)
+        self.assertEqual(resp.get_json().get('error'), '無法推薦房型')
+        app.rag.auto_recommend_room = original_func
+
     def test_generate_room_image(self):
         data = {'name': '測試房型', 'features': '測試'}
         resp = self.client.post('/generate_room_image', json=data)
         self.assertIn(resp.status_code, (200, 500))
 
+    def test_generate_room_image_success(self):
+        # 模擬 Text2Image.textToImage 回傳 True
+        from unittest.mock import patch
+        data = {'name': '測試房型', 'features': '測試'}
+        with patch('src.Text2Image.Text2Image.textToImage', return_value=True):
+            resp = self.client.post('/generate_room_image', json=data)
+            self.assertEqual(resp.status_code, 200)
+            result = resp.get_json()
+            self.assertIn('image_url', result)
+            self.assertIn('static/image/img_', result['image_url'])
+
     def test_add_room(self):
+        ROOT = pathlib.Path(__file__).resolve().parent.parent
         data = {
             'name': '測試房型',
             'price': '1000',
@@ -67,8 +103,23 @@ class AppTestCase(unittest.TestCase):
             'features': '測試',
             'style': '現代',
             'maxOccupancy': '2',
-            'image': '../static/image/img_99.png'
+            'image': os.path.join(ROOT, 'static/image/img_99.png')
         }
         resp = self.client.post('/add_room', json=data)
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(resp.get_json().get('success'))
+
+    def test_add_room_fail(self):
+        # 傳入不存在的圖片路徑，應觸發 return jsonify({'failure': False})
+        data = {
+            'name': '測試房型',
+            'price': '1000',
+            'area': '10坪',
+            'features': '測試',
+            'style': '現代',
+            'maxOccupancy': '2',
+            'image': 'not_a_valid_path.png'
+        }
+        resp = self.client.post('/add_room', json=data)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.get_json().get('failure'), False)
