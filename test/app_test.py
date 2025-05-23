@@ -103,7 +103,7 @@ class AppTestCase(unittest.TestCase):
             'features': '測試',
             'style': '現代',
             'maxOccupancy': '2',
-            'image': os.path.join(ROOT, 'static/image/img_99.png')
+            'image': '../static/image/img_99.png'
         }
         resp = self.client.post('/add_room', json=data)
         self.assertEqual(resp.status_code, 200)
