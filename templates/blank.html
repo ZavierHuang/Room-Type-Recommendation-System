@@ -145,6 +145,8 @@
             if (pendingCircle) pendingCircle.style.display = 'none';
             // 修正：自動推薦後檢查按鈕狀態
             checkRoomImageBtnEnable();
+            // 自動推薦後自動點擊房型圖片按鈕
+            document.getElementById('roomImageBtn').click();
           });
       });
       document.getElementById('clearAllBtn').addEventListener('click', function() {
