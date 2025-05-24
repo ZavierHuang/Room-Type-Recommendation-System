@@ -68,7 +68,7 @@ def generate_room_image():
     # 產生新 id
     new_id = max([room['id'] for room in rooms], default=-1) + 1
 
-    image_filename = f"img_{new_id}.png"
+    image_filename = f"img_{new_id}_temp.png"
     image_path = os.path.join(ROOT, f"static/image/{image_filename}")
     t2i = Text2Image(data, image_path)
     success = t2i.textToImage()
@@ -89,6 +89,16 @@ def add_room():
     if image_url and '/static/image/' in image_url:
         image_filename = image_url.split('/static/image/')[-1].split('?')[0]  # 去除快取參數
         image = os.path.join(ROOT, 'static', 'image', image_filename)
+        # 新增：如果是 temp 檔名則改名
+        if image_filename.endswith('_temp.png'):
+            new_image_filename = image_filename.replace('_temp.png', '.png')
+            new_image = os.path.join(ROOT, 'static', 'image', new_image_filename)
+            try:
+                os.rename(image, new_image)
+            except Exception as e:
+                return jsonify({'failure': False, 'error': str(e)})
+            image_filename = new_image_filename
+            image = new_image
     else:
         return jsonify({'failure': False})
     # 新房型資料
@@ -126,3 +136,4 @@ if __name__ == '__main__':
     app.run(debug=True)
 
 # Ctrl + ALT + B = Github Copilot
+

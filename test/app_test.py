@@ -123,3 +123,43 @@ class AppTestCase(unittest.TestCase):
         resp = self.client.post('/add_room', json=data)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.get_json().get('failure'), False)
+
+    def test_add_room_temp_image_rename(self):
+        ROOT = pathlib.Path(__file__).resolve().parent.parent
+        # 準備一個假的 temp 檔案
+        temp_img_path = os.path.join(ROOT, 'static/image/img_99_temp.png')
+        with open(temp_img_path, 'wb') as f:
+            f.write(b'fake image data')
+        data = {
+            'name': '測試房型_temp',
+            'price': '1000',
+            'area': '10',
+            'features': '測試',
+            'style': '現代',
+            'maxOccupancy': '2',
+            'image': '../static/image/img_99_temp.png'
+        }
+        resp = self.client.post('/add_room', json=data)
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.get_json().get('success'))
+        # 檢查 temp 檔已被更名
+        self.assertFalse(os.path.exists(temp_img_path))
+        self.assertTrue(os.path.exists(os.path.join(ROOT, 'static/image/img_99.png')))
+        os.remove(os.path.join(ROOT, 'static/image/img_99.png'))
+
+    def test_add_room_temp_image_not_exist(self):
+        ROOT = pathlib.Path(__file__).resolve().parent.parent
+        data = {
+            'name': '測試房型_temp2',
+            'price': '1000',
+            'area': '10',
+            'features': '測試',
+            'style': '現代',
+            'maxOccupancy': '2',
+            'image': '../static/image/img_100_temp.png'
+        }
+        resp = self.client.post('/add_room', json=data)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.get_json().get('failure'), False)
+
+
