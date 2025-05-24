@@ -245,6 +245,7 @@ class RAGPipeline:
                 "你是一位專業的飯店房型推薦助手，請根據資料庫內容，推薦一個最適合的房型，並只回傳一個 JSON 格式，欄位包含 name, price, area, features, style, maxOccupancy。"
                 "area、price、maxOccupancy只回傳數字，剩下內容請轉為「繁體中文」，不要有多餘說明。"
                 "請勿推薦與前次相同或相似的房型名稱，也不要與資料庫中已有的房型名稱重複。"
+                "房型名稱需能明確反映其特色（如特色設施、風格等），讓名稱與特色相對應。"
             )
 
             prompt = ChatPromptTemplate.from_messages([
