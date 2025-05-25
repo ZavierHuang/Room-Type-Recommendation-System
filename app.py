@@ -7,7 +7,7 @@ from src.Text2Image import Text2Image
 import json
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # 新增 session 密鑰
+app.secret_key = 'session'
 ROOT = pathlib.Path(__file__).resolve().parent
 
 rag = RAGPipeline(os.path.join(ROOT, 'static/rooms.json'))
