@@ -57,13 +57,21 @@ class TestText2ImageTranslatorAPI(unittest.TestCase):
         prompt = self.text2image.convertToSentenceFromJson()
         self.assertIsNone(prompt)
 
+
+    """
+    測試 generateImage 方法在正常流程下能成功產生圖片，並做以下動作：
+    1. 使用預設的 prompt 呼叫生成圖片的 pipeline（self.text2image.pipe）
+    2. 對生成的圖片做 resize (改變大小)
+    3. 把 resize 後的圖片存檔到指定路徑 (self.text2image.imageFilePath)
+    4. 最後返回 True (表示成功)
+    """
     def test_generate_image_success(self):
         self.text2image.prompt = "test prompt"
-        mock_image = MagicMock()
-        mock_resized_image = MagicMock()
+        mock_image = MagicMock()            #  mock 物件來模擬生成的圖片
+        mock_resized_image = MagicMock()    #  mock 物件來模擬 resize 後的圖片
         mock_image.resize.return_value = mock_resized_image
         mock_pipe = MagicMock(return_value=MagicMock(images=[mock_image]))
-        mock_resized_image.save = MagicMock()
+        mock_resized_image.save = MagicMock()   # 模擬 save() 方法
         self.text2image.pipe = mock_pipe
 
         result = self.text2image.generateImage()
@@ -79,6 +87,13 @@ class TestText2ImageTranslatorAPI(unittest.TestCase):
         result = self.text2image.generateImage()
         self.assertFalse(result)
 
+    """
+    測試 textToImage 方法在正常情況下：
+    1.會根據輸入的 JSON 資料組合 prompt（並透過翻譯器翻譯）
+    2.初始化 Scheduler 與 Pipeline
+    3.呼叫 generateImage() 產生圖片
+    4.最後回傳成功 (True)
+    """
     @patch('src.Text2Image.StableDiffusionPipeline')
     @patch('src.Text2Image.EulerDiscreteScheduler')
     @patch('src.Text2Image.GoogleTranslator')
@@ -93,15 +108,11 @@ class TestText2ImageTranslatorAPI(unittest.TestCase):
             "maxOccupancy": "2人房"
         }
         self.text2image.setJsonData(json_data)
-        # Mock Scheduler
         mock_scheduler.from_pretrained.return_value = 'mock_scheduler'
-        # Mock Pipeline
         mock_pipe_instance = MagicMock()
         mock_pipeline.from_pretrained.return_value = mock_pipe_instance
-        mock_pipe_instance.to.return_value = mock_pipe_instance
-        # Mock Translator
+        mock_pipe_instance.to.return_value = mock_pipe_instance             # to() 是將模型移動到指定設備（如 GPU），這裡模擬直接回傳自己
         mock_translator.return_value.translate.return_value = 'translated prompt'
-        # Mock generateImage
         with patch.object(self.text2image, 'generateImage', return_value=True) as mock_gen_img:
             result = self.text2image.textToImage()
             self.assertTrue(result)
@@ -159,6 +170,6 @@ class TestText2ImageTranslatorAPI(unittest.TestCase):
         mock_pipeline.from_pretrained.return_value = mock_pipe_instance
         mock_pipe_instance.to.return_value = mock_pipe_instance
         mock_translator.return_value.translate.return_value = 'translated prompt'
-        with patch.object(self.text2image, 'generateImage', return_value=False):
+        with patch.object(self.text2image, 'generateImage', return_value=False):    # 模擬生成圖片失敗
             result = self.text2image.textToImage()
             self.assertFalse(result)

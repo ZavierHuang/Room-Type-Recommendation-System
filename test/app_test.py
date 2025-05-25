@@ -95,7 +95,6 @@ class AppTestCase(unittest.TestCase):
             self.assertIn('static/image/img_', result['image_url'])
 
     def test_add_room(self):
-        ROOT = pathlib.Path(__file__).resolve().parent.parent
         data = {
             'name': '測試房型',
             'price': '1000',
@@ -148,7 +147,6 @@ class AppTestCase(unittest.TestCase):
         os.remove(os.path.join(ROOT, 'static/image/img_99.png'))
 
     def test_add_room_temp_image_not_exist(self):
-        ROOT = pathlib.Path(__file__).resolve().parent.parent
         data = {
             'name': '測試房型_temp2',
             'price': '1000',

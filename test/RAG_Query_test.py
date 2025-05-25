@@ -24,6 +24,14 @@ class TestRAGPipelineQuery(unittest.TestCase):
         self.assertEqual(result["rooms"], [])
         self.assertIn("只提供房型相關的建議", result["conclusion"])
 
+    """
+    測試當使用者詢問房型推薦（如："我要1000~2000元的房型"）且推薦內容完全符合需求時，整個流程是否會：
+    1. 正確分類意圖為「房型推薦」    
+    2. 正確擷取並過濾價格與面積範圍
+    3. 正確呼叫 LLM 進行推薦
+    4. 得到「符合需求」的審核結論
+    5. 回傳完整推薦內容與房型資訊
+    """
     @patch.object(RAGPipeline, 'classify_intent')
     @patch.object(RAGPipeline, 'getRoomSummaryByRAG')
     @patch.object(RAGPipeline, 'extract_price_range')
@@ -41,7 +49,6 @@ class TestRAGPipelineQuery(unittest.TestCase):
         mock_get_summary.return_value = "名稱:A 價格:1000 面積:10\n名稱:B 價格:2000 面積:20"
         mock_extract_price.return_value = (1000, 2000)
         mock_filter_price.return_value = "名稱:A 價格:1000 面積:10\n名稱:B 價格:2000 面積:20"
-        # 修正：extract_area_range 需回傳 4 個值
         mock_extract_area.return_value = (10, 20, False, False)
         mock_filter_area.return_value = "名稱:A 價格:1000 面積:10\n名稱:B 價格:2000 面積:20"
         mock_llm.return_value = "房型名稱：A\n推薦理由：好\n房型名稱：B\n推薦理由：棒\n結語：歡迎入住"
@@ -71,7 +78,6 @@ class TestRAGPipelineQuery(unittest.TestCase):
         mock_get_summary.return_value = "名稱:A 價格:1000 面積:10\n名稱:B 價格:2000 面積:20"
         mock_extract_price.return_value = (None, None)
         mock_filter_price.return_value = "名稱:A 價格:1000 面積:10\n名稱:B 價格:2000 面積:20"
-        # 修正：extract_area_range 需回傳 4 個值
         mock_extract_area.return_value = (None, None, False, False)
         mock_filter_area.return_value = "名稱:A 價格:1000 面積:10\n名稱:B 價格:2000 面積:20"
         mock_llm.return_value = "房型名稱：A\n推薦理由：好\n房型名稱：B\n推薦理由：棒\n結語：歡迎入住"
