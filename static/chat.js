@@ -63,6 +63,8 @@ $(document).ready(function() {
                 </div>
             </div>
         `);
+        // 新增：顯示 loading 時自動滾動到底部
+        $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
 
         $.ajax({
             url: '/chat',
