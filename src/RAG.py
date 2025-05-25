@@ -298,9 +298,6 @@ class RAGPipeline:
             except pyjson.JSONDecodeError:
                 continue
 
-            print("json_str:", json_str)
-            print("data:", data)
-
             if 'maxOccupancy' in data:
                 data['maxOccupancy'] = self._parse_max_occupancy(data['maxOccupancy'])
 

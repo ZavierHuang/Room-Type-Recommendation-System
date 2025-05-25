@@ -1,3 +1,6 @@
+import json
+import os
+import tempfile
 import unittest
 from unittest.mock import patch, MagicMock
 from src.RAG import RAGPipeline
@@ -7,11 +10,15 @@ class TestRAGPipeline(unittest.TestCase):
         self.rag = RAGPipeline.__new__(RAGPipeline)
         self.rag.llm = MagicMock()
 
+    """
+    test_classify_intent_room_recommend
+    mock_prompt 是由 @patch 自動注入的 mock 物件，代表被 mock 掉的 ChatPromptTemplate.from_messages
+    """
     @patch('src.RAG.ChatPromptTemplate.from_messages')
     def test_classify_intent_room_recommend(self, mock_prompt):
-        mock_chain = MagicMock()
-        mock_chain.invoke.return_value = '房型推薦'
-        mock_prompt.return_value.__or__.return_value = mock_chain
+        mock_chain = MagicMock()                                    # 建立一個假的 chain（模擬一個可以 .invoke() 的 chain 物件）
+        mock_chain.invoke.return_value = '房型推薦'                  # 當這個假的 chain 執行 .invoke() 時，會回傳 '房型推薦'，也就是模擬 LLM 預測出來的分類結果。
+        mock_prompt.return_value.__or__.return_value = mock_chain   # 模擬 chain = prompt | self.llm
         result = self.rag.classify_intent('請推薦三人房')
         self.assertEqual(result, '房型推薦')
 
@@ -70,6 +77,11 @@ class TestRAGPipeline(unittest.TestCase):
         self.assertEqual(self.rag.extract_area_range("40m²以下"), (None, 40, False, False))
         self.assertEqual(self.rag.extract_area_range("面積小於40m²"), (None, 40, False, True))
 
+    """
+    test_extract_style_keywords_basic
+    用 __new__ 方法手動建立 RAGPipeline 實例，跳過其 __init__() 初始化邏輯。
+    通常這是為了避免初始化過程中有其他不必要或複雜的依賴
+    """
     def test_extract_style_keywords_basic(self):
         self.rag = RAGPipeline.__new__(RAGPipeline)
         self.rag.data = [
@@ -103,7 +115,6 @@ class TestRAGPipeline(unittest.TestCase):
         ]
         text = "現代風的房型推薦"
         result = self.rag.extract_style_keywords(text)
-        print("result:",result)
         self.assertEqual(result, ["現代風"])
 
     def test_extract_style_keywords_all_styles(self):
@@ -118,8 +129,10 @@ class TestRAGPipeline(unittest.TestCase):
         self.assertEqual(set(result), {"工業風", "北歐風", "現代風"})
 
     def test_sort_by_style_match_no_keywords(self):
-        # 若 style_keywords 為空，應直接回傳原 docs
+        # 模擬出兩個 document（文件），都用 MagicMock 模擬，並設置 page_content 為 "A" 與 "B"
+        # MagicMock 是用來避免依賴真實文件資料結構。
         docs = [MagicMock(page_content="A"), MagicMock(page_content="B")]
+        # 若 style_keywords 為空，應直接回傳原 docs
         result = self.rag.sort_by_style_match(docs, [])
         self.assertEqual(result, docs)
 
@@ -182,13 +195,13 @@ class TestRAGPipeline(unittest.TestCase):
         self.assertEqual(result, "")
 
     def test_filter_by_price_range_no_price(self):
-        # 行內沒有價格資訊
+        # 無價格資訊
         summary = "名稱:房A 面積:20\n名稱:房B 面積:30"
         result = self.rag.filter_by_price_range(summary, min_price=1000)
         self.assertEqual(result, "")
 
     def test_filter_by_area_range_all_none(self):
-        # min_area, max_area 都為 None，應回傳所有有面積的行
+        # min_area, max_area 都為 None，應回傳所有有面積的資料
         summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
         result = self.rag.filter_by_area_range(summary)
         self.assertEqual(result, summary)
@@ -295,13 +308,20 @@ class TestRAGPipeline(unittest.TestCase):
         mock_doc1 = MagicMock(page_content="名稱:房A 價格:2000 面積:20 特色:大 風格:工業風 床數:2")
         mock_doc2 = MagicMock(page_content="名稱:房B 價格:3000 面積:30 特色:小 風格:北歐風 床數:3")
         self.rag.retriever = MagicMock()
+
+        #模擬 RAG 中的 retriever，讓它在被呼叫時回傳這兩個假 doc。
         self.rag.retriever.get_relevant_documents.return_value = [mock_doc1, mock_doc2]
         self.rag.extract_style_keywords = MagicMock(return_value=["工業風"])
         self.rag.sort_by_style_match = MagicMock(return_value=[mock_doc1, mock_doc2])
+
         result = self.rag.getRoomSummaryByRAG("我要工業風")
         self.assertEqual(result, "名稱:房A 價格:2000 面積:20 特色:大 風格:工業風 床數:2\n名稱:房B 價格:3000 面積:30 特色:小 風格:北歐風 床數:3")
+
+        # 確保 retriever 被正確呼叫且只呼叫一次，輸入參數正確
         self.rag.retriever.get_relevant_documents.assert_called_once_with("我要工業風")
+        # 確保風格擷取函式正確呼叫
         self.rag.extract_style_keywords.assert_called_once_with("我要工業風")
+        # 確保有使用擷取出的風格關鍵字對文件進行排序。
         self.rag.sort_by_style_match.assert_called_once_with([mock_doc1, mock_doc2], ["工業風"])
 
     def test_getRoomSummaryByRAG_empty_docs(self):
@@ -370,28 +390,36 @@ class TestRAGPipeline(unittest.TestCase):
         self.rag.data = [
             {"name": "A", "price": 1000, "area": 10, "features": "大", "style": "工業風", "maxOccupancy": 2}
         ]
+
+        # 初始化 used_names 為空集合，用來追蹤是否已推薦過該名稱（例如避免重複推薦 "A"）。
         self.rag.used_names = set()
-        self.rag.llm = MagicMock()  # 修正：補上 llm mock
+        # mock 掉 llm（大語言模型），是 LangChain 或類似架構中的一環，用來產生推薦內容。
+        self.rag.llm = MagicMock()
+        # 建立一個模擬的 chain 物件，用來模擬 LLM 被 prompt 驅動後回傳的結果。
         mock_chain = MagicMock()
-        # LLM 回傳內容
+        # LLM 回傳內容 (設定成永遠回傳固定的 JSON 字串)
         mock_chain.invoke.return_value = '{"name": "B", "price": 2000, "area": 20, "features": "小", "style": "北歐風", "maxOccupancy": "3"}'
         mock_prompt.return_value.__or__.return_value = mock_chain
+
+        # JSON 字串 -> JSON Format
         result = self.rag.auto_recommend_room()
         self.assertEqual(result, {
             "name": "B", "price": 2000, "area": 20, "features": "小", "style": "北歐風", "maxOccupancy": 3
         })
 
+    """
+    當 LLM 回傳的房型名稱與現有資料重複時，auto_recommend_room() 應該要自動重試，直到取得一個新名稱的推薦房型。
+    """
     @patch('src.RAG.ChatPromptTemplate.from_messages')
     def test_auto_recommend_room_duplicate_name(self, mock_prompt):
-        # LLM 回傳重複名稱，應重試
         self.rag = RAGPipeline.__new__(RAGPipeline)
         self.rag.data = [
             {"name": "A", "price": 1000, "area": 10, "features": "大", "style": "工業風", "maxOccupancy": 2}
         ]
         self.rag.used_names = set()
-        self.rag.llm = MagicMock()  # 修正：補上 llm mock
+        self.rag.llm = MagicMock()
         mock_chain = MagicMock()
-        # 先回傳重複名稱，再回傳新名稱
+        # 先回傳重複名稱，再回傳新名稱 (invoke() 第一次會回傳 "A"，第二次才會回傳 "B" => 模擬重試機制)
         mock_chain.invoke.side_effect = [
             '{"name": "A", "price": 2000, "area": 20, "features": "小", "style": "北歐風", "maxOccupancy": "3"}',
             '{"name": "B", "price": 3000, "area": 30, "features": "中", "style": "現代風", "maxOccupancy": "4"}'
@@ -401,16 +429,20 @@ class TestRAGPipeline(unittest.TestCase):
         self.assertEqual(result, {
             "name": "B", "price": 3000, "area": 30, "features": "中", "style": "現代風", "maxOccupancy": 4
         })
+        self.assertEqual(mock_chain.invoke.call_count, 2)
 
+    """
+    第一次解析會 json.loads('這不是json') → 觸發 json.JSONDecodeError。
+    第二次解析成功，並完成型別轉換（e.g. maxOccupancy 轉為 int(5)）。
+    最後得到期望的 dict 結構，並與 self.assertEqual(...) 成立。
+    """
     @patch('src.RAG.ChatPromptTemplate.from_messages')
     def test_auto_recommend_room_invalid_json(self, mock_prompt):
-        # LLM 回傳無法解析的 JSON，應重試
         self.rag = RAGPipeline.__new__(RAGPipeline)
         self.rag.data = []
         self.rag.used_names = set()
-        self.rag.llm = MagicMock()  # 修正：補上 llm mock
+        self.rag.llm = MagicMock()
         mock_chain = MagicMock()
-        # 先回傳無法解析，再回傳正確
         mock_chain.invoke.side_effect = [
             '這不是json',
             '{"name": "C", "price": 4000, "area": 40, "features": "大", "style": "日式", "maxOccupancy": "5"}'
@@ -420,6 +452,7 @@ class TestRAGPipeline(unittest.TestCase):
         self.assertEqual(result, {
             "name": "C", "price": 4000, "area": 40, "features": "大", "style": "日式", "maxOccupancy": 5
         })
+        self.assertEqual(mock_chain.invoke.call_count, 2)
 
     @patch('src.RAG.ChatPromptTemplate.from_messages')
     def test_auto_recommend_room_missing_field(self, mock_prompt):
@@ -427,7 +460,7 @@ class TestRAGPipeline(unittest.TestCase):
         self.rag = RAGPipeline.__new__(RAGPipeline)
         self.rag.data = []
         self.rag.used_names = set()
-        self.rag.llm = MagicMock()  # 修正：補上 llm mock
+        self.rag.llm = MagicMock()
         mock_chain = MagicMock()
         # 先回傳缺欄位，再回傳正確
         mock_chain.invoke.side_effect = [
@@ -439,22 +472,31 @@ class TestRAGPipeline(unittest.TestCase):
         self.assertEqual(result, {
             "name": "E", "price": 6000, "area": 60, "features": "大", "style": "現代", "maxOccupancy": 6
         })
+        self.assertEqual(mock_chain.invoke.call_count, 2)
 
+    """
+    當 LLM 連續回傳無效 JSON 且超過最大重試次數時，auto_recommend_room() 應該回傳 None
+    """
     @patch('src.RAG.ChatPromptTemplate.from_messages')
     def test_auto_recommend_room_max_retry(self, mock_prompt):
-        # LLM 連續回傳無效，最終回傳 None
         self.rag = RAGPipeline.__new__(RAGPipeline)
         self.rag.data = []
         self.rag.used_names = set()
-        self.rag.llm = MagicMock()  # 修正：補上 llm mock
+        self.rag.llm = MagicMock()
         mock_chain = MagicMock()
-        mock_chain.invoke.return_value = '這不是json'
+        mock_chain.invoke.return_value = '這不是json'      # 這表示每次呼叫 LLM，永遠回傳錯誤格式的字串，會讓 json.loads() 失敗
         mock_prompt.return_value.__or__.return_value = mock_chain
         result = self.rag.auto_recommend_room()
         self.assertIsNone(result)
+        self.assertEqual(mock_chain.invoke.call_count, 5)
 
+
+    """
+    當 LLM 第一次回傳無法解析的 JSON（會觸發 JSONDecodeError），auto_recommend_room() 應該自動重試
+    並在第二次成功後正確回傳解析後的房型資訊。
+    """
     @patch('src.RAG.ChatPromptTemplate.from_messages')
-    def test_auto_recommend_room_jsondecodeerror(self, mock_prompt):
+    def test_auto_recommend_room_json_decode_Error(self, mock_prompt):
         # LLM 回傳格式錯誤，觸發 JSONDecodeError，應重試
         self.rag = RAGPipeline.__new__(RAGPipeline)
         self.rag.data = []
@@ -471,6 +513,7 @@ class TestRAGPipeline(unittest.TestCase):
         self.assertEqual(result, {
             "name": "F", "price": 7000, "area": 70, "features": "大", "style": "現代", "maxOccupancy": 7
         })
+        self.assertEqual(mock_chain.invoke.call_count, 2)
 
     @patch('src.RAG.ChatPromptTemplate.from_messages')
     def test_auto_recommend_room_no_json_match(self, mock_prompt):
@@ -491,9 +534,11 @@ class TestRAGPipeline(unittest.TestCase):
             "name": "G", "price": 8000, "area": 80, "features": "大", "style": "現代", "maxOccupancy": 8
         })
 
+    """
+    確認當 LLM 回應表示「推薦內容已符合使用者需求」時，review_recommendation 函數可以正確回傳這段訊息。
+    """
     @patch('src.RAG.ChatPromptTemplate.from_messages')
     def test_review_recommendation_fully_match(self, mock_prompt):
-        """LLM 回覆完全符合需求"""
         mock_chain = MagicMock()
         mock_chain.invoke.return_value = '推薦內容符合使用者需求，無需變更。'
         mock_prompt.return_value.__or__.return_value = mock_chain
@@ -502,9 +547,11 @@ class TestRAGPipeline(unittest.TestCase):
         result = self.rag.review_recommendation(user_question, llm_output)
         self.assertEqual(result, '推薦內容符合使用者需求，無需變更。')
 
+    """
+    驗證當 LLM 判斷「推薦內容不完全符合使用者需求」時，review_recommendation() 是否能正確回傳 LLM 給的建議內容。
+    """
     @patch('src.RAG.ChatPromptTemplate.from_messages')
     def test_review_recommendation_not_fully_match(self, mock_prompt):
-        """LLM 回覆不完全符合需求，需重新推薦"""
         reply = '目前沒有完全符合的房型，以下是最接近的建議\n房型A\n推薦理由...'
         mock_chain = MagicMock()
         mock_chain.invoke.return_value = reply
@@ -516,7 +563,6 @@ class TestRAGPipeline(unittest.TestCase):
 
     @patch('src.RAG.ChatPromptTemplate.from_messages')
     def test_review_recommendation_unexpected(self, mock_prompt):
-        """LLM 回覆未預期內容"""
         reply = '這是一個未預期的回覆'
         mock_chain = MagicMock()
         mock_chain.invoke.return_value = reply
@@ -572,28 +618,37 @@ class TestRAGPipeline(unittest.TestCase):
         self.assertIn("豪華房", result)
         mock_chain.invoke.assert_called_once_with({"input": question, "rooms": rooms_summary})
 
+    """
+    驗證 RAGPipeline 的初始化行為是否正確地：
+        從 JSON 檔案載入資料
+        初始化必要屬性（docs, vectorstore, retriever, llm, used_names 等）
+    """
     def test_init_loads_data_and_sets_attributes(self):
-        import os
-        import tempfile
-        import json
-        from src.RAG import RAGPipeline
-        # 建立臨時 json 檔案
         data = [
             {"name": "A", "price": 1000, "area": 10, "features": "大", "style": "工業風", "maxOccupancy": 2}
         ]
+
+        """
+        使用 tempfile.NamedTemporaryFile() 建立一個臨時 JSON 檔。
+        將測試資料寫入該檔案
+        delete=False：保證檔案保留到手動刪除。
+        """
         with tempfile.NamedTemporaryFile('w+', delete=False, suffix='.json', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False)
-            f.flush()
-            path = f.name
+            f.flush()           # 剛用 json.dump() 寫進去的資料「確保寫到磁碟」
+            path = f.name       # 把檔案的路徑記錄下來，用於後續程式（如模型初始化）
 
         try:
-            rag = RAGPipeline(path)
-            self.assertEqual(rag.data, data)
+            rag = RAGPipeline(path)                         # 建立 RAGPipeline 實例，傳入 JSON 檔案路徑。
+            self.assertEqual(rag.data, data)                # 驗證它的 data 成員是否等於我們寫入的資料。
+
+            # 驗證其餘的必要屬性是否正確初始化。
             self.assertTrue(hasattr(rag, "docs"))
             self.assertTrue(hasattr(rag, "vectorstore"))
             self.assertTrue(hasattr(rag, "retriever"))
             self.assertTrue(hasattr(rag, "llm"))
             self.assertTrue(hasattr(rag, "used_names"))
         finally:
+            # 確保測試完畢會刪除臨時檔案，避免殘留
             os.remove(path)
 
