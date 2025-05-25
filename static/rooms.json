@@ -45,7 +45,7 @@
         "price": "8000",
         "area": "40",
         "features": "商務書桌、沙發區、免費mini bar",
-        "style": "現代",
+        "style": "商務",
         "maxOccupancy": "2人房",
         "image": "../static/image/img_4.png"
     },
@@ -198,5 +198,15 @@
         "style": "自然",
         "maxOccupancy": "2人房",
         "image": "../static/image/img_19.png"
+    },
+    {
+        "id": 20,
+        "name": "星夜雅緻套房",
+        "price": "8800",
+        "area": "45",
+        "features": "獨立客廳、浴缸、星空投影燈、Nespresso咖啡機",
+        "style": "奢華",
+        "maxOccupancy": "6人房",
+        "image": "../static/image/img_20.png"
     }
 ]

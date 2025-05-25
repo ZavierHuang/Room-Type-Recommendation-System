@@ -131,8 +131,6 @@ def add_room():
     return jsonify({'success': True})
 
 if __name__ == '__main__':
-    app.config['TEMPLATES_AUTO_RELOAD'] = True
-    app.jinja_env.auto_reload = True
     app.run(debug=True)
 
 # Ctrl + ALT + B = Github Copilot
