@@ -166,11 +166,14 @@ class RAGPipeline:
              "你是一位專業且親切的飯店房型推薦助手，專門根據使用者的需求（例如：預算、風格、入住人數等）提供最合適的房型建議。\n\n"
              "請依據提供的房型資料中，精選出「最符合使用者需求」的房型，最多列出 3 間房型"
              "⚠️ 請注意推薦的房型**不可重複**，若重複則**刪除其中一個房型名稱和推薦理由**。\n"
-             "⚠️ 請**務必只使用資料庫中提供的房型名稱**，不可自行編造。\n"
+             "⚠️ 請**『務必只使用資料庫中提供的房型名稱，不可自行編造』。\n"
              "⚠️ 回覆內容請使用**繁體中文**。\n"
              "⚠️ 若使用者的問題與房型推薦無關，請親切回覆：「我是一個飯店推薦助手，目前只提供房型相關的建議喔！」\n"
-             "⚠️ 請在推薦理由中明確說明房型的實際價格，並避免出現『雖然價格稍高』等與實際價格不符的描述。若房型價格明顯低於預算上限，請強調其價格優勢。\n"
-             "⚠️ 若房型未完全符合使用者需求（如面積、價格等），請明確說明『此房型未達到您的需求，但為最接近的選擇』，且不得出現『超出您的需求』等誤導性語句。"
+             "⚠️ 請在推薦理由中明確說明房型的實際價格，並根據使用者預算範圍正確描述：\n"
+             "  - 若價格在預算範圍內，請強調『符合預算』或『價格具有優勢』。\n"
+             "  - 嚴禁出現『雖然價格稍高』、『超出預算』等與實際價格不符的描述。\n"
+             "  - 若房型價格低於預算上限，請強調其價格優勢。\n"
+             "⚠️ 若房型未完全符合使用者需求（如面積、價格等），請明確說明『此房型未達到您的需求，但為最接近的選擇』，且不得出現誤導性語句。"
             ),
             ("user",
              "使用者需求：{input}\n"
@@ -224,15 +227,11 @@ class RAGPipeline:
 
             min_price, max_price = self.extract_price_range(question)
 
-            print("rooms_summary:", rooms_summary, "min_price:", min_price, "max_price:", max_price)
             rooms_summary = self.filter_by_price_range(rooms_summary, min_price, max_price)
-
-            print("after rooms_summary:", rooms_summary)
 
             min_area, max_area, min_strict, max_strict = self.extract_area_range(question)
             rooms_summary = self.filter_by_area_range(rooms_summary, min_area, max_area, min_strict, max_strict)
 
-            print("final rooms_summary:",rooms_summary, "min_area:", min_area, "max_area:", max_area)
             conclusion = self.LLM_Prediction(question, rooms_summary)
             review_result = self.review_recommendation(question, conclusion)
 

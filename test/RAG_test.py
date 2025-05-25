@@ -51,21 +51,24 @@ class TestRAGPipeline(unittest.TestCase):
 
     def test_range_area_pattern(self):
         # 測試各種區間格式
-        self.assertEqual(self.rag.extract_area_range("30~50m²"), (30, 50))
-        self.assertEqual(self.rag.extract_area_range("30至50平方公尺"), (30, 50))
-        self.assertEqual(self.rag.extract_area_range("20~60"), (20, 60))
-        self.assertEqual(self.rag.extract_area_range("1200—1800"), (1200, 1800))
-        self.assertEqual(self.rag.extract_area_range("40平方米~60平方米"), (40, 60))
+        self.assertEqual(self.rag.extract_area_range("30~50m²"), (30, 50, False, False))
+        self.assertEqual(self.rag.extract_area_range("30至50平方公尺"), (30, 50, False, False))
+        self.assertEqual(self.rag.extract_area_range("面積20~60"), (20, 60, False, False))
+        self.assertEqual(self.rag.extract_area_range("12—18坪"), (12, 18, False, False))
+        self.assertEqual(self.rag.extract_area_range("40平方米~60平方米"), (40, 60, False, False))
+        self.assertEqual(self.rag.extract_area_range("大於40平方米，小於60平方米"), (40, 60, True, True))
 
     def test_min_area_pattern(self):
-        self.assertEqual(self.rag.extract_area_range("40平方公尺以上的房型"), (40, None))
-        self.assertEqual(self.rag.extract_area_range("面積40起的房型"), (40, None))
-        self.assertEqual(self.rag.extract_area_range("40m²以上"), (40, None))
+        self.assertEqual(self.rag.extract_area_range("40平方公尺以上的房型"), (40, None, False, False))
+        self.assertEqual(self.rag.extract_area_range("面積40起的房型"), (40, None, False, False))
+        self.assertEqual(self.rag.extract_area_range("40m²以上"), (40, None, False, False))
+        self.assertEqual(self.rag.extract_area_range("面積大於40m²"), (40, None, True, False))
 
     def test_max_area_pattern(self):
-        self.assertEqual(self.rag.extract_area_range("40平方公尺以下的房型"), (None, 40))
-        self.assertEqual(self.rag.extract_area_range("面積40以內的房型"), (None, 40))
-        self.assertEqual(self.rag.extract_area_range("40m²以下"), (None, 40))
+        self.assertEqual(self.rag.extract_area_range("40平方公尺以下的房型"), (None, 40, False, False))
+        self.assertEqual(self.rag.extract_area_range("面積40以內的房型"), (None, 40, False, False))
+        self.assertEqual(self.rag.extract_area_range("40m²以下"), (None, 40, False, False))
+        self.assertEqual(self.rag.extract_area_range("面積小於40m²"), (None, 40, False, True))
 
     def test_extract_style_keywords_basic(self):
         self.rag = RAGPipeline.__new__(RAGPipeline)
@@ -218,6 +221,32 @@ class TestRAGPipeline(unittest.TestCase):
         # 行內沒有面積資訊
         summary = "名稱:房A 價格:2000\n名稱:房B 價格:3000"
         result = self.rag.filter_by_area_range(summary, min_area=10)
+        self.assertEqual(result, "")
+
+    def test_filter_by_area_range_min_strict(self):
+        # min_strict 為 True，area 必須嚴格大於 min_area
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        # 僅 30, 40 > 20
+        result = self.rag.filter_by_area_range(summary, min_area=20, min_strict=True)
+        self.assertEqual(result, "名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40")
+        # 僅 40 > 30
+        result = self.rag.filter_by_area_range(summary, min_area=30, min_strict=True)
+        self.assertEqual(result, "名稱:房C 價格:4000 面積:40")
+        # 無任何房型 > 40
+        result = self.rag.filter_by_area_range(summary, min_area=40, min_strict=True)
+        self.assertEqual(result, "")
+
+    def test_filter_by_area_range_max_strict(self):
+        # max_strict 為 True，area 必須嚴格小於 max_area
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        # 僅 20, 30 < 40
+        result = self.rag.filter_by_area_range(summary, max_area=40, max_strict=True)
+        self.assertEqual(result, "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30")
+        # 僅 20 < 30
+        result = self.rag.filter_by_area_range(summary, max_area=30, max_strict=True)
+        self.assertEqual(result, "名稱:房A 價格:2000 面積:20")
+        # 無任何房型 < 20
+        result = self.rag.filter_by_area_range(summary, max_area=20, max_strict=True)
         self.assertEqual(result, "")
 
     def test_remove_duplicate_room_names_none(self):

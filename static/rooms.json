@@ -12,8 +12,8 @@
     {
         "id": 1,
         "name": "現代豪華雙人房",
-        "price": "4800",
-        "area": "28",
+        "price": "7000",
+        "area": "50",
         "features": "大理石浴室、景觀窗、書桌",
         "style": "現代",
         "maxOccupancy": "2人房",
