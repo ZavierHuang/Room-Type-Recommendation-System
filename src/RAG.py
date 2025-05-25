@@ -62,21 +62,37 @@ class RAGPipeline:
     def extract_area_range(self, text):
         min_area = None
         max_area = None
+        min_strict = False  # 是否嚴格大於
+        max_strict = False  # 是否嚴格小於
 
-        # 擷取格式：30~50m²、40 到 70 平方米 等
-        range_match = re.search(r'(\d{2,4})\s*(m²|平方公尺|平方米)?\s*(~|到|至|\-|—)\s*(\d{2,4})', text)
+        # 僅當有面積相關關鍵詞時才進行匹配
+        if not re.search(r'(面積|坪|平方|m²|平方米|平方公尺)', text):
+            return min_area, max_area, min_strict, max_strict
+
+        # 30~50m²、40 到 70 平方米
+        range_match = re.search(r'(\d{2,4})\s*(m²|平方公尺|平方米|坪)?\s*(~|到|至|\-|—)\s*(\d{2,4})', text)
         if range_match:
             min_area = int(range_match.group(1))
             max_area = int(range_match.group(4))
-            return min_area, max_area
+            return min_area, max_area, False, False
 
-        if match := re.search(r'(\d{2,4})\s*(m²|平方公尺|平方米)?\s*(以上|起|以上的)', text):
+        # 大於/超過/多於
+        if match := re.search(r'(\d{2,4})\s*(m²|平方公尺|平方米|坪)?\s*(以上|起|以上的)', text):
             min_area = int(match.group(1))
+            min_strict = False
+        elif match := re.search(r'(大於|超過|多於)\s*(\d{2,4})', text):
+            min_area = int(match.group(2))
+            min_strict = True
 
-        if match := re.search(r'(\d{2,4})\s*(m²|平方公尺|平方米)?\s*(以下|以內|之內)', text):
+        # 小於/少於/低於
+        if match := re.search(r'(\d{2,4})\s*(m²|平方公尺|平方米|坪)?\s*(以下|以內|之內)', text):
             max_area = int(match.group(1))
+            max_strict = False
+        elif match := re.search(r'(小於|少於|低於)\s*(\d{2,4})', text):
+            max_area = int(match.group(2))
+            max_strict = True
 
-        return min_area, max_area
+        return min_area, max_area, min_strict, max_strict
 
     def extract_style_keywords(self, text):
         styles = []
@@ -107,14 +123,23 @@ class RAGPipeline:
                     filtered.append(doc)
         return '\n'.join(filtered)
 
-    def filter_by_area_range(self, summary, min_area=None, max_area=None):
+    def filter_by_area_range(self, summary, min_area=None, max_area=None, min_strict=False, max_strict=False):
         filtered = []
         for doc in summary.split('\n'):
             match = re.search(r'面積[:：]?(\d{1,4})', doc)
             if match:
                 area = int(match.group(1))
-                if (min_area is None or area >= min_area) and (max_area is None or area <= max_area):
-                    filtered.append(doc)
+                if min_area is not None:
+                    if min_strict and not (area > min_area):
+                        continue
+                    if not min_strict and not (area >= min_area):
+                        continue
+                if max_area is not None:
+                    if max_strict and not (area < max_area):
+                        continue
+                    if not max_strict and not (area <= max_area):
+                        continue
+                filtered.append(doc)
         return '\n'.join(filtered)
 
     def remove_duplicate_room_names(self, conclusion: str) -> str:
@@ -143,7 +168,10 @@ class RAGPipeline:
              "⚠️ 請注意推薦的房型**不可重複**，若重複則**刪除其中一個房型名稱和推薦理由**。\n"
              "⚠️ 請**務必只使用資料庫中提供的房型名稱**，不可自行編造。\n"
              "⚠️ 回覆內容請使用**繁體中文**。\n"
-             "⚠️ 若使用者的問題與房型推薦無關，請親切回覆：「我是一個飯店推薦助手，目前只提供房型相關的建議喔！」"),
+             "⚠️ 若使用者的問題與房型推薦無關，請親切回覆：「我是一個飯店推薦助手，目前只提供房型相關的建議喔！」\n"
+             "⚠️ 請在推薦理由中明確說明房型的實際價格，並避免出現『雖然價格稍高』等與實際價格不符的描述。若房型價格明顯低於預算上限，請強調其價格優勢。\n"
+             "⚠️ 若房型未完全符合使用者需求（如面積、價格等），請明確說明『此房型未達到您的需求，但為最接近的選擇』，且不得出現『超出您的需求』等誤導性語句。"
+            ),
             ("user",
              "使用者需求：{input}\n"
              "房型資料：{rooms}\n\n"
@@ -195,11 +223,16 @@ class RAGPipeline:
             rooms_summary = self.getRoomSummaryByRAG(question)
 
             min_price, max_price = self.extract_price_range(question)
+
+            print("rooms_summary:", rooms_summary, "min_price:", min_price, "max_price:", max_price)
             rooms_summary = self.filter_by_price_range(rooms_summary, min_price, max_price)
 
-            min_area, max_area = self.extract_area_range(question)
-            rooms_summary = self.filter_by_area_range(rooms_summary, min_area, max_area)
+            print("after rooms_summary:", rooms_summary)
 
+            min_area, max_area, min_strict, max_strict = self.extract_area_range(question)
+            rooms_summary = self.filter_by_area_range(rooms_summary, min_area, max_area, min_strict, max_strict)
+
+            print("final rooms_summary:",rooms_summary, "min_area:", min_area, "max_area:", max_area)
             conclusion = self.LLM_Prediction(question, rooms_summary)
             review_result = self.review_recommendation(question, conclusion)
 
