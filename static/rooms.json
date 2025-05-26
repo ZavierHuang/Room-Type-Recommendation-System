@@ -208,5 +208,15 @@
         "style": "奢華",
         "maxOccupancy": "6人房",
         "image": "../static/image/img_20.png"
+    },
+    {
+        "id": 21,
+        "name": "星光頂層套房",
+        "price": "9000",
+        "area": "80",
+        "features": "頂樓露台、私人按摩浴缸、星空投影、智能家居系統",
+        "style": "現代奢華",
+        "maxOccupancy": "2人房",
+        "image": "../static/image/img_21.png"
     }
 ]
