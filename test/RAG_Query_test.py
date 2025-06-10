@@ -74,17 +74,23 @@ class TestRAGPipelineQuery(unittest.TestCase):
         self, mock_remove_dup, mock_review, mock_llm, mock_filter_area, mock_extract_area,
         mock_filter_price, mock_extract_price, mock_get_summary, mock_intent
     ):
+        """
+        測試當使用者詢問房型推薦（如："我要3000~4000元的房型，30~40坪"）但資料庫無完全符合時，
+        1. 正確分類意圖為「房型推薦」
+        2. 正確擷取並過濾價格與面積範圍
+        3. 正確呼叫 LLM 進行推薦
+        4. 得到「不符合需求」的審核結論
+        """
         mock_intent.return_value = "房型推薦"
         mock_get_summary.return_value = "名稱:A 價格:1000 面積:10\n名稱:B 價格:2000 面積:20"
-        mock_extract_price.return_value = (None, None)
-        mock_filter_price.return_value = "名稱:A 價格:1000 面積:10\n名稱:B 價格:2000 面積:20"
-        mock_extract_area.return_value = (None, None, False, False)
-        mock_filter_area.return_value = "名稱:A 價格:1000 面積:10\n名稱:B 價格:2000 面積:20"
-        mock_llm.return_value = "房型名稱：A\n推薦理由：好\n房型名稱：B\n推薦理由：棒\n結語：歡迎入住"
-        mock_review.return_value = "目前沒有完全符合的房型，以下是最接近的建議\n房型名稱：A\n推薦理由：好"
+        mock_extract_price.return_value = (3000, 4000)
+        mock_filter_price.return_value = ""  # 無符合價格範圍
+        mock_extract_area.return_value = (30, 40, False, False)
+        mock_filter_area.return_value = ""  # 無符合面積範圍
+        mock_llm.return_value = "目前沒有完全符合的房型"
+        mock_review.return_value = "目前沒有完全符合的房型"
         mock_remove_dup.side_effect = lambda x: x
 
-        result = self.rag.query("我要便宜的房型")
-        self.assertIn("A", result["rooms"])
-        self.assertIn("最接近的建議", result["conclusion"])
-
+        result = self.rag.query("我要3000~4000元的房型，30~40坪")
+        self.assertEqual(result["rooms"], {})
+        self.assertIn("沒有完全符合的房型", result["conclusion"])

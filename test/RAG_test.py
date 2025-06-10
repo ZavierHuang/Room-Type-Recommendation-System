@@ -552,7 +552,7 @@ class TestRAGPipeline(unittest.TestCase):
     """
     @patch('src.RAG.ChatPromptTemplate.from_messages')
     def test_review_recommendation_not_fully_match(self, mock_prompt):
-        reply = '目前沒有完全符合的房型，以下是最接近的建議\n房型A\n推薦理由...'
+        reply = '目前沒有完全符合的房型'
         mock_chain = MagicMock()
         mock_chain.invoke.return_value = reply
         mock_prompt.return_value.__or__.return_value = mock_chain
