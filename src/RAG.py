@@ -20,7 +20,7 @@ class RAGPipeline:
         embeddings = FastEmbedEmbeddings()
         self.vectorstore = Chroma.from_documents(self.docs, embeddings)
         self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 10})
-        self.llm = Ollama(model="gemma3:12b-it-qat")
+        self.llm = Ollama(model="gemma3:27b-it-qat", base_url="http://140.124.184.213:11434")
         self.used_names = set()  # 新增：用於追蹤所有已推薦過的房型名稱
 
 
