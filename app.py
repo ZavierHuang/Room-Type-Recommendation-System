@@ -168,7 +168,7 @@ def add_room():
     with open(os.path.join(ROOT, 'static/rooms.json'), 'w', encoding='utf-8') as f:
         json.dump(rooms, f, ensure_ascii=False, indent=4)
 
-    # 找出目前資料中最大 ID，用來後續新增房型時自動遞增 ID
+    # 把剛剛更新完的 rooms.json 完整同步到 RAG pipeline 的內部資料
     rag.data = rooms
 
     # 找出目前資料中最大 ID，用來後續新增房型時自動遞增 ID
@@ -191,5 +191,6 @@ def add_room():
 
     return jsonify({'success': True})
 
-app.run(debug=True)
-# Ctrl + ALT + B = Github Copilot
+if __name__ == '__main__':
+    app.run(debug=True)
+    # Ctrl + ALT + B = Github Copilot
