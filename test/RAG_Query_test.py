@@ -47,7 +47,7 @@ class TestRAGPipelineQuery(unittest.TestCase):
     ):
         mock_intent.return_value = "房型推薦"
         mock_get_summary.return_value = "名稱:A 價格:1000 面積:10\n名稱:B 價格:2000 面積:20"
-        mock_extract_price.return_value = (1000, 2000)
+        mock_extract_price.return_value = (1000, 2000, False, False)
         mock_filter_price.return_value = "名稱:A 價格:1000 面積:10\n名稱:B 價格:2000 面積:20"
         mock_extract_area.return_value = (10, 20, False, False)
         mock_filter_area.return_value = "名稱:A 價格:1000 面積:10\n名稱:B 價格:2000 面積:20"
@@ -83,7 +83,7 @@ class TestRAGPipelineQuery(unittest.TestCase):
         """
         mock_intent.return_value = "房型推薦"
         mock_get_summary.return_value = "名稱:A 價格:1000 面積:10\n名稱:B 價格:2000 面積:20"
-        mock_extract_price.return_value = (3000, 4000)
+        mock_extract_price.return_value = (3000, 4000, False, False)
         mock_filter_price.return_value = ""  # 無符合價格範圍
         mock_extract_area.return_value = (30, 40, False, False)
         mock_filter_area.return_value = ""  # 無符合面積範圍

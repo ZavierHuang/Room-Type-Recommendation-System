@@ -40,21 +40,41 @@ class TestRAGPipeline(unittest.TestCase):
 
     def test_range_price_pattern(self):
         # 測試各種區間格式
-        self.assertEqual(self.rag.extract_price_range("價格2000~3000元"), (2000, 3000))
-        self.assertEqual(self.rag.extract_price_range("1500到2500"), (1500, 2500))
-        self.assertEqual(self.rag.extract_price_range("1000-2000"), (1000, 2000))
-        self.assertEqual(self.rag.extract_price_range("1200—1800"), (1200, 1800))
-        self.assertEqual(self.rag.extract_price_range("3000 至 5000元"), (3000, 5000))
+        self.assertEqual(self.rag.extract_price_range("價格2000~3000元"), (2000, 3000, False, False))
+        self.assertEqual(self.rag.extract_price_range("1500到2500"), (1500, 2500, False, False))
+        self.assertEqual(self.rag.extract_price_range("1000-2000"), (1000, 2000, False, False))
+        self.assertEqual(self.rag.extract_price_range("1200—1800"), (1200, 1800, False, False))
+        self.assertEqual(self.rag.extract_price_range("3000 至 5000元"), (3000, 5000, False, False))
 
     def test_min_price_pattern(self):
-        self.assertEqual(self.rag.extract_price_range("2000元以上"), (2000, None))
-        self.assertEqual(self.rag.extract_price_range("2000元以上的房型"), (2000, None))
-        self.assertEqual(self.rag.extract_price_range("2000元起的房型"), (2000, None))
+        self.assertEqual(self.rag.extract_price_range("2000元以上"), (2000, None, False, False))
+        self.assertEqual(self.rag.extract_price_range("2000元以上的房型"), (2000, None, False, False))
+        self.assertEqual(self.rag.extract_price_range("2000元起的房型"), (2000, None, False, False))
 
     def test_max_price_pattern(self):
-        self.assertEqual(self.rag.extract_price_range("2000元以內"), (None, 2000))
-        self.assertEqual(self.rag.extract_price_range("2000元以下"), (None, 2000))
-        self.assertEqual(self.rag.extract_price_range("2000元之內"), (None, 2000))
+        self.assertEqual(self.rag.extract_price_range("2000元以內"), (None, 2000, False, False))
+        self.assertEqual(self.rag.extract_price_range("2000元以下"), (None, 2000, False, False))
+        self.assertEqual(self.rag.extract_price_range("2000元之內"), (None, 2000, False, False))
+
+    def test_min_price_strict_pattern(self):
+        self.assertEqual(self.rag.extract_price_range("大於2000元"), (2000, None, True, False))
+        self.assertEqual(self.rag.extract_price_range("超過3000"), (3000, None, True, False))
+        self.assertEqual(self.rag.extract_price_range("多於1500元的房型"), (1500, None, True, False))
+
+    def test_max_price_strict_pattern(self):
+        self.assertEqual(self.rag.extract_price_range("小於4000元"), (None, 4000, False, True))
+        self.assertEqual(self.rag.extract_price_range("少於2500"), (None, 2500, False, True))
+        self.assertEqual(self.rag.extract_price_range("低於1800元的房型"), (None, 1800, False, True))
+
+    def test_range_price_strict_mix(self):
+        # 嚴格大於+嚴格小於同時出現
+        self.assertEqual(self.rag.extract_price_range("大於2000元，小於4000元"), (2000, 4000, True, True))
+        # 嚴格大於+非嚴格小於
+        self.assertEqual(self.rag.extract_price_range("大於2000元，4000元以內"), (2000, 4000, True, False))
+        # 非嚴格大於+嚴格小於
+        self.assertEqual(self.rag.extract_price_range("2000元以上，小於4000元"), (2000, 4000, False, True))
+        # 非嚴格大於+非嚴格小於
+        self.assertEqual(self.rag.extract_price_range("2000元以上，4000元以內"), (2000, 4000, False, False))
 
     def test_range_area_pattern(self):
         # 測試各種區間格式
@@ -260,6 +280,33 @@ class TestRAGPipeline(unittest.TestCase):
         self.assertEqual(result, "名稱:房A 價格:2000 面積:20")
         # 無任何房型 < 20
         result = self.rag.filter_by_area_range(summary, max_area=20, max_strict=True)
+        self.assertEqual(result, "")
+
+    def test_filter_by_price_range_min_strict(self):
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        # min_strict=True, 只會留下價格>2000的房型
+        result = self.rag.filter_by_price_range(summary, min_price=2000, min_strict=True)
+        self.assertEqual(result, "名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40")
+        # min_strict=True, min_price=4000，無任何房型>4000
+        result = self.rag.filter_by_price_range(summary, min_price=4000, min_strict=True)
+        self.assertEqual(result, "")
+
+    def test_filter_by_price_range_max_strict(self):
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        # max_strict=True, 只會留下價格<4000的房型
+        result = self.rag.filter_by_price_range(summary, max_price=4000, max_strict=True)
+        self.assertEqual(result, "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30")
+        # max_strict=True, max_price=2000，無任何房型<2000
+        result = self.rag.filter_by_price_range(summary, max_price=2000, max_strict=True)
+        self.assertEqual(result, "")
+
+    def test_filter_by_price_range_min_and_max_strict(self):
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        # min_strict=True, max_strict=True, 僅價格>2000且<4000
+        result = self.rag.filter_by_price_range(summary, min_price=2000, max_price=4000, min_strict=True, max_strict=True)
+        self.assertEqual(result, "名稱:房B 價格:3000 面積:30")
+        # min_strict=True, max_strict=True, 無任何房型>4000且<2000
+        result = self.rag.filter_by_price_range(summary, min_price=4000, max_price=2000, min_strict=True, max_strict=True)
         self.assertEqual(result, "")
 
     def test_remove_duplicate_room_names_none(self):

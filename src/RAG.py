@@ -43,21 +43,33 @@ class RAGPipeline:
     def extract_price_range(self, text):
         min_price = None
         max_price = None
+        min_strict = False  # 是否嚴格大於
+        max_strict = False  # 是否嚴格小於
 
-        # 擷取連續 3 到 5 位數字」，僅會匹配數值在 100 到 99999 的金額。
+        # 區間：2000~3000元、1500到2500
         range_match = re.search(r'(\d{3,5})\s*(元)?\s*(~|到|至|\-|—)\s*(\d{3,5})', text)
         if range_match:
             min_price = int(range_match.group(1))
             max_price = int(range_match.group(4))
-            return min_price, max_price
+            return min_price, max_price, min_strict, max_strict
 
+        # 大於/超過/多於/以上/起
         if match := re.search(r'(\d{3,5})\s*(元)?\s*(以上|起|以上的)', text):
             min_price = int(match.group(1))
+            min_strict = False
+        elif match := re.search(r'(大於|超過|多於)\s*(\d{3,5})', text):
+            min_price = int(match.group(2))
+            min_strict = True
 
+        # 小於/少於/低於/以下/以內/之內
         if match := re.search(r'(\d{3,5})\s*(元)?\s*(以下|以內|之內)', text):
             max_price = int(match.group(1))
+            max_strict = False
+        elif match := re.search(r'(小於|少於|低於)\s*(\d{3,5})', text):
+            max_price = int(match.group(2))
+            max_strict = True
 
-        return min_price, max_price
+        return min_price, max_price, min_strict, max_strict
 
     def extract_area_range(self, text):
         min_area = None
@@ -113,14 +125,23 @@ class RAGPipeline:
 
         return sorted(docs, key=score, reverse=True)
 
-    def filter_by_price_range(self, summary, min_price=None, max_price=None):
+    def filter_by_price_range(self, summary, min_price=None, max_price=None, min_strict=False, max_strict=False):
         filtered = []
         for doc in summary.split('\n'):
             match = re.search(r'價格[:：]?(\d+)', doc)
             if match:
                 price = int(match.group(1))
-                if (min_price is None or price >= min_price) and (max_price is None or price <= max_price):
-                    filtered.append(doc)
+                if min_price is not None:
+                    if min_strict and not (price > min_price):
+                        continue
+                    if not min_strict and not (price >= min_price):
+                        continue
+                if max_price is not None:
+                    if max_strict and not (price < max_price):
+                        continue
+                    if not max_strict and not (price <= max_price):
+                        continue
+                filtered.append(doc)
         return '\n'.join(filtered)
 
     def filter_by_area_range(self, summary, min_area=None, max_area=None, min_strict=False, max_strict=False):
@@ -225,9 +246,9 @@ class RAGPipeline:
         if "房型推薦" in intent:
             rooms_summary = self.getRoomSummaryByRAG(question)
 
-            min_price, max_price = self.extract_price_range(question)
+            min_price, max_price, min_strict, max_strict = self.extract_price_range(question)
 
-            rooms_summary = self.filter_by_price_range(rooms_summary, min_price, max_price)
+            rooms_summary = self.filter_by_price_range(rooms_summary, min_price, max_price, min_strict, max_strict)
 
             min_area, max_area, min_strict, max_strict = self.extract_area_range(question)
             rooms_summary = self.filter_by_area_range(rooms_summary, min_area, max_area, min_strict, max_strict)
