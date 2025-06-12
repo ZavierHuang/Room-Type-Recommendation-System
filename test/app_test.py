@@ -52,15 +52,15 @@ class AppTestCase(unittest.TestCase):
         text = resp.data.decode('utf-8')
         self.assertTrue('房型' in text or 'name' in text)
 
-    def test_blank_requires_login(self):
-        resp = self.client.get('/blank', follow_redirects=True)
+    def test_backend_requires_login(self):
+        resp = self.client.get('/backend', follow_redirects=True)
         text = resp.data.decode('utf-8')
         self.assertTrue('登入' in text or 'login' in text)
 
-    def test_blank_with_login(self):
+    def test_backend_with_login(self):
         with self.client.session_transaction() as sess:
             sess['logged_in'] = True
-        resp = self.client.get('/blank')
+        resp = self.client.get('/backend')
         self.assertEqual(resp.status_code, 200)
         text = resp.data.decode('utf-8')
         self.assertTrue('房型' in text or 'name' in text)

@@ -32,7 +32,7 @@ def login():
         password = request.form.get('password')
         if username == 'admin' and password == 'admin':
             session['logged_in'] = True
-            return redirect(url_for('blank'))
+            return redirect(url_for('backend'))
         else:
             return render_template('login.html', error='帳號或密碼錯誤')
     return render_template('login.html')
@@ -42,14 +42,14 @@ def logout():
     session.pop('logged_in', None)
     return redirect(url_for('index'))
 
-@app.route('/blank')
-def blank():
+@app.route('/backend')
+def backend():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     # 讀取房型資料 JSON
     with open(os.path.join(ROOT, 'static/rooms.json'), 'r', encoding='utf-8') as f:
         rooms = json.load(f)
-    return render_template('blank.html', rooms=rooms)
+    return render_template('backend.html', rooms=rooms)
 
 @app.route('/auto_recommend', methods=['GET'])
 def auto_recommend():
