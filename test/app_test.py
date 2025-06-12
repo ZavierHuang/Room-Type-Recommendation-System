@@ -3,7 +3,7 @@ import os
 import pathlib
 import unittest
 
-from app import app
+from app import app, ROOT
 
 
 class AppTestCase(unittest.TestCase):
@@ -95,6 +95,11 @@ class AppTestCase(unittest.TestCase):
             self.assertIn('static/image/img_', result['image_url'])
 
     def test_add_room(self):
+        # 建立一個暫時檔案模擬圖片
+        image_path = os.path.join(ROOT, 'static/image/img_99_temp.png')
+        with open(image_path, 'wb') as f:
+            f.write(b'test')  # 假裝圖片內容
+
         data = {
             'name': '測試房型',
             'price': '1000',
@@ -102,11 +107,14 @@ class AppTestCase(unittest.TestCase):
             'features': '測試',
             'style': '現代',
             'maxOccupancy': '2',
-            'image': '../static/image/img_99.png'
+            'image': '/static/image/img_99_temp.png'
         }
         resp = self.client.post('/add_room', json=data)
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(resp.get_json().get('success'))
+
+        # 清理
+        os.remove(os.path.join(ROOT, 'static/image/img_99.png'))
 
     def test_add_room_fail(self):
         # 傳入不存在的圖片路徑，應觸發 return jsonify({'failure': False})
