@@ -55,10 +55,10 @@ class RAGPipeline:
 
         """
         input = "3000~5000元"
-        group(1) => (d{3,5}) 最小價格 = 3000
+        group(1) => 最小價格 = 3000
         group(2) => (元)? (? = 0 or 1 次)
-        group(3) => (~|到|至|\-|—) 範圍分隔
-        group(4) => (d{3,5}) 最大價格 = 5000
+        group(3) => (~|到|至|-|—) 範圍分隔
+        group(4) => 最大價格 = 5000
         return (3000, 5000, False, False)
         """
         range_match = re.search(r'(\d{3,5})\s*(元)?\s*(~|到|至|\-|—)\s*(\d{3,5})', text)
@@ -69,14 +69,14 @@ class RAGPipeline:
 
         """
         input = "5000 元起" (>= 5000)
-        group(1) => (d{3,5}) 最小價格 = 3000
+        group(1) => 最小價格 = 3000
         group(2) => (元)
         group(3) => (以上|起|以上的) 
         return (3000, None, False, False)
         
         input = "高於 5000元" (> 5000)
         group(1) => (大於|超過|高於)
-        group(2) => d{3,5} = 5000
+        group(2) => 最小價格 = 5000
         group(3) => (元)
         return (5000, None, True, False)
         """
@@ -89,14 +89,14 @@ class RAGPipeline:
 
         """
         input = "3000 之內" (<= 3000)
-        group(1) => (d{3,5}) 最小價格 = 3000
+        group(1) => 最高價格 = 3000
         group(2) => (元)
         group(3) => (以上|起|以上的) 
         return (None, 3000, False, False)
 
         input = "低於 5000元" (< 5000)
         group(1) => (小於|少於|低於)
-        group(2) => d{3,5} = 5000
+        group(2) => = 最高價格 5000
         group(3) => (元)
         return (None, 3000, False, True)
         """
@@ -124,10 +124,10 @@ class RAGPipeline:
 
         """
         input = "面積 50 坪 ~ 100 坪"
-        group(1) => (\d{2,4}) 最小面積 = 50
+        group(1) 最小面積 = 50
         group(2) => (m²|平方公尺|平方米|坪)? (可選)
-        group(3) => (~|到|至|\-|—) 範圍分隔
-        group(4) => (\d{2,4}) 最大面積 = 100
+        group(3) => (~|到|至|-|—) 範圍分隔
+        group(4) 最大面積 = 100
         return (50, 100, False, False)
         """
         range_match = re.search(r'(\d{2,4})\s*(m²|平方公尺|平方米|坪)?\s*(~|到|至|\-|—)\s*(\d{2,4})', text)
@@ -138,14 +138,14 @@ class RAGPipeline:
 
         """
         input = "面積 50 坪以上" (>= 50)
-        group(1) => (\d{2,4}) 最小面積 = 50
+        group(1) 最小面積 = 50
         group(2) => (m²|平方公尺|平方米|坪)? (可選)
         group(3) => (以上|起|以上的)
         return (50, None, False, False)
         
         input = "大於 50 坪" (> 50)
         group(1) => (大於|超過|多於)
-        group(2) => (\d{2,4}) = 50
+        group(2) 最小面積 = 50
         group(3) => (m²|平方公尺|平方米|坪)? (可選)
         return (50, None, True, False)
         """
@@ -158,14 +158,14 @@ class RAGPipeline:
 
         """
         input = "面積 50 坪以下" (<= 50)
-        group(1) => (\d{2,4}) 最小面積 = 50
+        group(1) 最大面積 = 50
         group(2) => (m²|平方公尺|平方米|坪)? (可選)
         group(3) => (以下|以內|之內)
         return (None, 50, False, False)
         
         input = "小於 50 坪" (< 50)
         group(1) => (小於|少於|低於)
-        group(2) => (\d{2,4}) = 50
+        group(2) 最大面積 = 50
         group(3) => (m²|平方公尺|平方米|坪)? (可選)
         return (None, 50, False, True)
         """
