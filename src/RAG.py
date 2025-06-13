@@ -287,10 +287,20 @@ class RAGPipeline:
     移除推薦結論中重複的房型名稱及其推薦理由。
     
     conclusion: 
-    房型名稱：豪華雙人房\n推薦理由：空間寬敞\n房型名稱：豪華雙人房\n推薦理由：價格優惠\n房型名稱：經濟單人房\n推薦理由：價格實惠
+    房型名稱：豪華雙人房
+    推薦理由：空間寬敞
+    房型名稱：豪華雙人房
+    推薦理由：價格優惠
+    房型名稱：經濟單人房
+    推薦理由：價格實惠
+    結語：歡迎入住
     
     output:
-    房型名稱：豪華雙人房\n推薦理由：空間寬敞\n房型名稱：經濟單人房\n推薦理由：價格實惠
+    房型名稱：豪華雙人房
+    推薦理由：空間寬敞
+    房型名稱：經濟單人房
+    推薦理由：價格實惠
+    結語：歡迎入住
     """
     def remove_duplicate_room_names(self, conclusion: str):
         seen = set()
@@ -307,6 +317,7 @@ class RAGPipeline:
                     skip_next = True
                     continue
                 seen.add(name)
+            print(line)
             result.append(line)
         return '\n'.join(result)
 
@@ -381,10 +392,11 @@ class RAGPipeline:
     範例：
       question = "我要工業風雙人房"
       取得相關文件後，若有：
+        名稱:現代風雙人房 價格:3200 面積:22 特色:... 風格:現代風 床數:2
+        名稱:工業風雙人房 價格:3000 面積:20 特色:... 風格:工業風 床數:2
+      則回傳：
         名稱:工業風雙人房 價格:3000 面積:20 特色:... 風格:工業風 床數:2
         名稱:現代風雙人房 價格:3200 面積:22 特色:... 風格:現代風 床數:2
-      則回傳：
-        "名稱:工業風雙人房 價格:3000 面積:20 特色:... 風格:工業風 床數:2\n名稱:現代風雙人房 價格:3200 面積:22 特色:... 風格:現代風 床數:2"
     """
     def getRoomSummaryByRAG(self, question):
         docs = self.retriever.get_relevant_documents(question)

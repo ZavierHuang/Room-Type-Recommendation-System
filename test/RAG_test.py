@@ -11,14 +11,17 @@ class TestRAGPipeline(unittest.TestCase):
         self.rag.llm = MagicMock()
 
     """
-    test_classify_intent_room_recommend
-    mock_prompt 是由 @patch 自動注入的 mock 物件，代表被 mock 掉的 ChatPromptTemplate.from_messages
+    Mock → ChatPromptTemplate.from_messages() 方法
+    因為 classify_intent() 裡會使用 ChatPromptTemplate.from_messages() 來建立 Prompt 模板 → 用於提示語生成
+    這裡把它 mock 掉 → 測試時不去真正運行 Prompt 模板，只測邏輯流程。
     """
     @patch('src.RAG.ChatPromptTemplate.from_messages')
     def test_classify_intent_room_recommend(self, mock_prompt):
-        mock_chain = MagicMock()                                    # 建立一個假的 chain（模擬一個可以 .invoke() 的 chain 物件）
-        mock_chain.invoke.return_value = '房型推薦'                  # 當這個假的 chain 執行 .invoke() 時，會回傳 '房型推薦'，也就是模擬 LLM 預測出來的分類結果。
-        mock_prompt.return_value.__or__.return_value = mock_chain   # 模擬 chain = prompt | self.llm
+        mock_chain = MagicMock()
+        mock_chain.invoke.return_value = '房型推薦'
+
+        #  組成一個 chain → 用來生成 AI 回應
+        mock_prompt.return_value.__or__.return_value = mock_chain
         result = self.rag.classify_intent('請推薦三人房')
         self.assertEqual(result, '房型推薦')
 
@@ -76,6 +79,77 @@ class TestRAGPipeline(unittest.TestCase):
         # 非嚴格大於+非嚴格小於
         self.assertEqual(self.rag.extract_price_range("2000元以上，4000元以內"), (2000, 4000, False, False))
 
+    def test_filter_by_price_range_all_none(self):
+        # min_price, max_price 都為 None，應回傳所有有價格的行
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        result = self.rag.filter_by_price_range(summary)
+        self.assertEqual(result, summary)
+
+    def test_filter_by_price_range_min(self):
+        # 只設 min_price
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        result = self.rag.filter_by_price_range(summary, min_price=3000)
+        self.assertEqual(result, "名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40")
+
+    def test_filter_by_price_range_max(self):
+        # 只設 max_price
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        result = self.rag.filter_by_price_range(summary, max_price=2500)
+        self.assertEqual(result, "名稱:房A 價格:2000 面積:20")
+
+    def test_filter_by_price_range_min_and_max(self):
+        # 同時設 min_price, max_price
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        result = self.rag.filter_by_price_range(summary, min_price=2000, max_price=3000)
+        self.assertEqual(result, "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30")
+
+    def test_filter_by_price_range_strict_min(self):
+        # 設定 min_price + strictly (> min_price)
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        result = self.rag.filter_by_price_range(summary, min_price=2000, min_strict=True)
+        self.assertEqual(result, "名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40")
+
+    def test_filter_by_price_range_no_match(self):
+        # 沒有任何房型符合 (<= 4000)
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30"
+        result = self.rag.filter_by_price_range(summary, min_price=4000)
+        self.assertEqual(result, "")
+
+    def test_filter_by_price_range_no_price(self):
+        # 無價格資訊
+        summary = "名稱:房A 面積:20\n名稱:房B 面積:30"
+        result = self.rag.filter_by_price_range(summary, min_price=1000)
+        self.assertEqual(result, "")
+
+    def test_filter_by_price_range_min_strict(self):
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        # min_strict=True, 只會留下價格>2000的房型
+        result = self.rag.filter_by_price_range(summary, min_price=2000, min_strict=True)
+        self.assertEqual(result, "名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40")
+        # min_strict=True, min_price=4000，無任何房型>4000
+        result = self.rag.filter_by_price_range(summary, min_price=4000, min_strict=True)
+        self.assertEqual(result, "")
+
+    def test_filter_by_price_range_max_strict(self):
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        # max_strict=True, 只會留下價格<4000的房型
+        result = self.rag.filter_by_price_range(summary, max_price=4000, max_strict=True)
+        self.assertEqual(result, "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30")
+        # max_strict=True, max_price=2000，無任何房型<2000
+        result = self.rag.filter_by_price_range(summary, max_price=2000, max_strict=True)
+        self.assertEqual(result, "")
+
+    def test_filter_by_price_range_min_and_max_strict(self):
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        # min_strict=True, max_strict=True, 僅價格>2000且<4000
+        result = self.rag.filter_by_price_range(summary, min_price=2000, max_price=4000, min_strict=True,
+                                                max_strict=True)
+        self.assertEqual(result, "名稱:房B 價格:3000 面積:30")
+        # min_strict=True, max_strict=True, 無任何房型>4000且<2000
+        result = self.rag.filter_by_price_range(summary, min_price=4000, max_price=2000, min_strict=True,
+                                                max_strict=True)
+        self.assertEqual(result, "")
+
     def test_range_area_pattern(self):
         # 測試各種區間格式
         self.assertEqual(self.rag.extract_area_range("30~50m²"), (30, 50, False, False))
@@ -97,11 +171,68 @@ class TestRAGPipeline(unittest.TestCase):
         self.assertEqual(self.rag.extract_area_range("40m²以下"), (None, 40, False, False))
         self.assertEqual(self.rag.extract_area_range("面積小於40m²"), (None, 40, False, True))
 
-    """
-    test_extract_style_keywords_basic
-    用 __new__ 方法手動建立 RAGPipeline 實例，跳過其 __init__() 初始化邏輯。
-    通常這是為了避免初始化過程中有其他不必要或複雜的依賴
-    """
+    def test_filter_by_area_range_all_none(self):
+        # min_area, max_area 都為 None，應回傳所有有面積的資料
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        result = self.rag.filter_by_area_range(summary)
+        self.assertEqual(result, summary)
+
+    def test_filter_by_area_range_min(self):
+        # 只設 min_area
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        result = self.rag.filter_by_area_range(summary, min_area=30)
+        self.assertEqual(result, "名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40")
+
+    def test_filter_by_area_range_max(self):
+        # 只設 max_area
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        result = self.rag.filter_by_area_range(summary, max_area=25)
+        self.assertEqual(result, "名稱:房A 價格:2000 面積:20")
+
+    def test_filter_by_area_range_min_and_max(self):
+        # 同時設 min_area, max_area
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        result = self.rag.filter_by_area_range(summary, min_area=20, max_area=30)
+        self.assertEqual(result, "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30")
+
+    def test_filter_by_area_range_no_match(self):
+        # 沒有任何房型符合
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30"
+        result = self.rag.filter_by_area_range(summary, min_area=50)
+        self.assertEqual(result, "")
+
+    def test_filter_by_area_range_no_area(self):
+        # 行內沒有面積資訊
+        summary = "名稱:房A 價格:2000\n名稱:房B 價格:3000"
+        result = self.rag.filter_by_area_range(summary, min_area=10)
+        self.assertEqual(result, "")
+
+    def test_filter_by_area_range_min_strict(self):
+        # min_strict 為 True，area 必須嚴格大於 min_area
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        # 僅 30, 40 > 20
+        result = self.rag.filter_by_area_range(summary, min_area=20, min_strict=True)
+        self.assertEqual(result, "名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40")
+        # 僅 40 > 30
+        result = self.rag.filter_by_area_range(summary, min_area=30, min_strict=True)
+        self.assertEqual(result, "名稱:房C 價格:4000 面積:40")
+        # 無任何房型 > 40
+        result = self.rag.filter_by_area_range(summary, min_area=40, min_strict=True)
+        self.assertEqual(result, "")
+
+    def test_filter_by_area_range_max_strict(self):
+        # max_strict 為 True，area 必須嚴格小於 max_area
+        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
+        # 僅 20, 30 < 40
+        result = self.rag.filter_by_area_range(summary, max_area=40, max_strict=True)
+        self.assertEqual(result, "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30")
+        # 僅 20 < 30
+        result = self.rag.filter_by_area_range(summary, max_area=30, max_strict=True)
+        self.assertEqual(result, "名稱:房A 價格:2000 面積:20")
+        # 無任何房型 < 20
+        result = self.rag.filter_by_area_range(summary, max_area=20, max_strict=True)
+        self.assertEqual(result, "")
+
     def test_extract_style_keywords_basic(self):
         self.rag = RAGPipeline.__new__(RAGPipeline)
         self.rag.data = [
@@ -184,131 +315,6 @@ class TestRAGPipeline(unittest.TestCase):
         result = self.rag.sort_by_style_match(docs, style_keywords)
         self.assertEqual(result, [doc1, doc2])
 
-    def test_filter_by_price_range_all_none(self):
-        # min_price, max_price 都為 None，應回傳所有有價格的行
-        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
-        result = self.rag.filter_by_price_range(summary)
-        self.assertEqual(result, summary)
-
-    def test_filter_by_price_range_min(self):
-        # 只設 min_price
-        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
-        result = self.rag.filter_by_price_range(summary, min_price=3000)
-        self.assertEqual(result, "名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40")
-
-    def test_filter_by_price_range_max(self):
-        # 只設 max_price
-        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
-        result = self.rag.filter_by_price_range(summary, max_price=2500)
-        self.assertEqual(result, "名稱:房A 價格:2000 面積:20")
-
-    def test_filter_by_price_range_min_and_max(self):
-        # 同時設 min_price, max_price
-        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
-        result = self.rag.filter_by_price_range(summary, min_price=2000, max_price=3000)
-        self.assertEqual(result, "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30")
-
-    def test_filter_by_price_range_no_match(self):
-        # 沒有任何房型符合
-        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30"
-        result = self.rag.filter_by_price_range(summary, min_price=4000)
-        self.assertEqual(result, "")
-
-    def test_filter_by_price_range_no_price(self):
-        # 無價格資訊
-        summary = "名稱:房A 面積:20\n名稱:房B 面積:30"
-        result = self.rag.filter_by_price_range(summary, min_price=1000)
-        self.assertEqual(result, "")
-
-    def test_filter_by_area_range_all_none(self):
-        # min_area, max_area 都為 None，應回傳所有有面積的資料
-        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
-        result = self.rag.filter_by_area_range(summary)
-        self.assertEqual(result, summary)
-
-    def test_filter_by_area_range_min(self):
-        # 只設 min_area
-        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
-        result = self.rag.filter_by_area_range(summary, min_area=30)
-        self.assertEqual(result, "名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40")
-
-    def test_filter_by_area_range_max(self):
-        # 只設 max_area
-        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
-        result = self.rag.filter_by_area_range(summary, max_area=25)
-        self.assertEqual(result, "名稱:房A 價格:2000 面積:20")
-
-    def test_filter_by_area_range_min_and_max(self):
-        # 同時設 min_area, max_area
-        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
-        result = self.rag.filter_by_area_range(summary, min_area=20, max_area=30)
-        self.assertEqual(result, "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30")
-
-    def test_filter_by_area_range_no_match(self):
-        # 沒有任何房型符合
-        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30"
-        result = self.rag.filter_by_area_range(summary, min_area=50)
-        self.assertEqual(result, "")
-
-    def test_filter_by_area_range_no_area(self):
-        # 行內沒有面積資訊
-        summary = "名稱:房A 價格:2000\n名稱:房B 價格:3000"
-        result = self.rag.filter_by_area_range(summary, min_area=10)
-        self.assertEqual(result, "")
-
-    def test_filter_by_area_range_min_strict(self):
-        # min_strict 為 True，area 必須嚴格大於 min_area
-        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
-        # 僅 30, 40 > 20
-        result = self.rag.filter_by_area_range(summary, min_area=20, min_strict=True)
-        self.assertEqual(result, "名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40")
-        # 僅 40 > 30
-        result = self.rag.filter_by_area_range(summary, min_area=30, min_strict=True)
-        self.assertEqual(result, "名稱:房C 價格:4000 面積:40")
-        # 無任何房型 > 40
-        result = self.rag.filter_by_area_range(summary, min_area=40, min_strict=True)
-        self.assertEqual(result, "")
-
-    def test_filter_by_area_range_max_strict(self):
-        # max_strict 為 True，area 必須嚴格小於 max_area
-        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
-        # 僅 20, 30 < 40
-        result = self.rag.filter_by_area_range(summary, max_area=40, max_strict=True)
-        self.assertEqual(result, "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30")
-        # 僅 20 < 30
-        result = self.rag.filter_by_area_range(summary, max_area=30, max_strict=True)
-        self.assertEqual(result, "名稱:房A 價格:2000 面積:20")
-        # 無任何房型 < 20
-        result = self.rag.filter_by_area_range(summary, max_area=20, max_strict=True)
-        self.assertEqual(result, "")
-
-    def test_filter_by_price_range_min_strict(self):
-        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
-        # min_strict=True, 只會留下價格>2000的房型
-        result = self.rag.filter_by_price_range(summary, min_price=2000, min_strict=True)
-        self.assertEqual(result, "名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40")
-        # min_strict=True, min_price=4000，無任何房型>4000
-        result = self.rag.filter_by_price_range(summary, min_price=4000, min_strict=True)
-        self.assertEqual(result, "")
-
-    def test_filter_by_price_range_max_strict(self):
-        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
-        # max_strict=True, 只會留下價格<4000的房型
-        result = self.rag.filter_by_price_range(summary, max_price=4000, max_strict=True)
-        self.assertEqual(result, "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30")
-        # max_strict=True, max_price=2000，無任何房型<2000
-        result = self.rag.filter_by_price_range(summary, max_price=2000, max_strict=True)
-        self.assertEqual(result, "")
-
-    def test_filter_by_price_range_min_and_max_strict(self):
-        summary = "名稱:房A 價格:2000 面積:20\n名稱:房B 價格:3000 面積:30\n名稱:房C 價格:4000 面積:40"
-        # min_strict=True, max_strict=True, 僅價格>2000且<4000
-        result = self.rag.filter_by_price_range(summary, min_price=2000, max_price=4000, min_strict=True, max_strict=True)
-        self.assertEqual(result, "名稱:房B 價格:3000 面積:30")
-        # min_strict=True, max_strict=True, 無任何房型>4000且<2000
-        result = self.rag.filter_by_price_range(summary, min_price=4000, max_price=2000, min_strict=True, max_strict=True)
-        self.assertEqual(result, "")
-
     def test_remove_duplicate_room_names_none(self):
         # 沒有重複房型名稱
         conclusion = "房型名稱：A\n推薦理由：好\n房型名稱：B\n推薦理由：棒\n結語：歡迎入住"
@@ -322,33 +328,6 @@ class TestRAGPipeline(unittest.TestCase):
         result = self.rag.remove_duplicate_room_names(conclusion)
         self.assertEqual(result, expected)
 
-    def test_remove_duplicate_room_names_duplicate_at_end(self):
-        # 重複房型名稱在結語前
-        conclusion = "房型名稱：A\n推薦理由：好\n房型名稱：A\n推薦理由：再推一次\n結語：歡迎入住"
-        expected = "房型名稱：A\n推薦理由：好\n結語：歡迎入住"
-        result = self.rag.remove_duplicate_room_names(conclusion)
-        self.assertEqual(result, expected)
-
-    def test_remove_duplicate_room_names_consecutive_duplicates(self):
-        # 連續重複房型名稱
-        conclusion = "房型名稱：A\n推薦理由：好\n房型名稱：A\n推薦理由：再推一次\n房型名稱：A\n推薦理由：三推\n結語：歡迎入住"
-        expected = "房型名稱：A\n推薦理由：好\n結語：歡迎入住"
-        result = self.rag.remove_duplicate_room_names(conclusion)
-        self.assertEqual(result, expected)
-
-    def test_remove_duplicate_room_names_only_duplicates(self):
-        # 只有重複房型名稱
-        conclusion = "房型名稱：A\n推薦理由：好\n房型名稱：A\n推薦理由：再推一次"
-        expected = "房型名稱：A\n推薦理由：好"
-        result = self.rag.remove_duplicate_room_names(conclusion)
-        self.assertEqual(result, expected)
-
-    def test_remove_duplicate_room_names_no_room(self):
-        # 沒有任何房型名稱
-        conclusion = "推薦理由：好\n結語：歡迎入住"
-        result = self.rag.remove_duplicate_room_names(conclusion)
-        self.assertEqual(result, conclusion)
-
     def test_getRoomSummaryByRAG_basic(self):
         # 準備 mock retriever, extract_style_keywords, sort_by_style_match
         self.rag = RAGPipeline.__new__(RAGPipeline)
@@ -356,7 +335,7 @@ class TestRAGPipeline(unittest.TestCase):
         mock_doc2 = MagicMock(page_content="名稱:房B 價格:3000 面積:30 特色:小 風格:北歐風 床數:3")
         self.rag.retriever = MagicMock()
 
-        #模擬 RAG 中的 retriever，讓它在被呼叫時回傳這兩個假 doc。
+        # 模擬 RAG 中的 retriever，讓它在被呼叫時回傳這兩個假 doc。
         self.rag.retriever.get_relevant_documents.return_value = [mock_doc1, mock_doc2]
         self.rag.extract_style_keywords = MagicMock(return_value=["工業風"])
         self.rag.sort_by_style_match = MagicMock(return_value=[mock_doc1, mock_doc2])
@@ -382,13 +361,14 @@ class TestRAGPipeline(unittest.TestCase):
 
     def test_getRoomSummaryByRAG_style_keywords_none(self):
         self.rag = RAGPipeline.__new__(RAGPipeline)
-        mock_doc = MagicMock(page_content="名稱:房A 價格:2000 面積:20 特色:大 風格:工業風 床數:2")
+        mock_doc1 = MagicMock(page_content="名稱:房A 價格:2000 面積:20 特色:大 風格:工業風 床數:2")
+        mock_doc2 = MagicMock(page_content="名稱:房B 價格:3000 面積:30 特色:小 風格:北歐風 床數:3")
         self.rag.retriever = MagicMock()
-        self.rag.retriever.get_relevant_documents.return_value = [mock_doc]
+        self.rag.retriever.get_relevant_documents.return_value = [mock_doc1, mock_doc2]
         self.rag.extract_style_keywords = MagicMock(return_value=[])
-        self.rag.sort_by_style_match = MagicMock(return_value=[mock_doc])
+        self.rag.sort_by_style_match = MagicMock(return_value=[mock_doc1, mock_doc2])
         result = self.rag.getRoomSummaryByRAG("沒有風格")
-        self.assertEqual(result, "名稱:房A 價格:2000 面積:20 特色:大 風格:工業風 床數:2")
+        self.assertEqual(result, "名稱:房A 價格:2000 面積:20 特色:大 風格:工業風 床數:2\n名稱:房B 價格:3000 面積:30 特色:小 風格:北歐風 床數:3")
 
     def test_getRoomSummaryByRAG_sorting_effect(self):
         self.rag = RAGPipeline.__new__(RAGPipeline)
@@ -608,17 +588,6 @@ class TestRAGPipeline(unittest.TestCase):
         result = self.rag.review_recommendation(user_question, llm_output)
         self.assertEqual(result, reply)
 
-    # @patch('src.RAG.ChatPromptTemplate.from_messages')
-    # def test_review_recommendation_unexpected(self, mock_prompt):
-    #     reply = '這是一個未預期的回覆'
-    #     mock_chain = MagicMock()
-    #     mock_chain.invoke.return_value = reply
-    #     mock_prompt.return_value.__or__.return_value = mock_chain
-    #     user_question = '我要四人房，日式風格'
-    #     llm_output = '推薦內容...'
-    #     result = self.rag.review_recommendation(user_question, llm_output)
-    #     self.assertEqual(result, reply)
-
     @patch('src.RAG.ChatPromptTemplate.from_messages')
     def test_llm_prediction_normal(self, mock_prompt):
         self.rag = RAGPipeline.__new__(RAGPipeline)
@@ -682,8 +651,8 @@ class TestRAGPipeline(unittest.TestCase):
         """
         with tempfile.NamedTemporaryFile('w+', delete=False, suffix='.json', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False)
-            f.flush()           # 剛用 json.dump() 寫進去的資料「確保寫到磁碟」
-            path = f.name       # 把檔案的路徑記錄下來，用於後續程式（如模型初始化）
+            f.flush()           # 使用 json.dump() 寫進去的資料「確保寫到磁碟」
+            path = f.name       # 紀錄檔案路徑記
 
         try:
             rag = RAGPipeline(path)                         # 建立 RAGPipeline 實例，傳入 JSON 檔案路徑。
@@ -698,4 +667,3 @@ class TestRAGPipeline(unittest.TestCase):
         finally:
             # 確保測試完畢會刪除臨時檔案，避免殘留
             os.remove(path)
-
