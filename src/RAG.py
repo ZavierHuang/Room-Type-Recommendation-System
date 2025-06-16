@@ -6,6 +6,7 @@ from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import FastEmbedEmbeddings
 from langchain.docstore.document import Document
 import json as pyjson
+import random
 
 class RAGPipeline:
     def __init__(self, json_path):
@@ -33,13 +34,13 @@ class RAGPipeline:
              "請判斷以下使用者輸入屬於哪一種類型：\n"
              "1. 房型推薦需求（包含價格、風格、幾人房、設備、是否有某項特色等）\n"
              "2. 一般打招呼或聊天（如：你好、哈囉、在嗎）\n"
-             "3. 其他與房型無關的問題（例如問天氣、問你是誰）\n\n"
+             "3. 廣泛推薦（如：有什麼推薦、請推薦、推薦一下、可以推薦嗎、請問有推薦的房型嗎等泛用推薦問題，這類問題沒有明確條件，請直接回傳 '泛用推薦'）\n"
+             "4. 其他與房型無關的問題（例如問天氣、問你是誰）\n\n"
              "使用者可能會詢問是否有某種房型（例如：是否有工業風？是否有浴缸？），這也屬於房型推薦。\n"
-             "請你只回答：'房型推薦'、'打招呼' 或 '其他'"
+             "請你只回答：'房型推薦'、'打招呼'、'泛用推薦' 或 '其他'"
              ),
             ("user", question)
         ])
-        # prompt | llm => 把 prompt 的輸出傳遞給 LLM ==> invoke 執行 (空字典，表示不傳入參數)
         result = (prompt | self.llm).invoke({})
         return result.strip()
 
@@ -435,6 +436,25 @@ class RAGPipeline:
                 "rooms": [],
                 "conclusion": "您好，我是一位飯店推薦助手，很高興為您服務！請問您有什麼住宿需求，我可以幫您推薦合適的房型喔～"
             }
+
+        if "泛用推薦" in intent:
+            # 隨機取三個房型
+            sample_rooms = random.sample(self.data, min(3, len(self.data)))
+            conclusion = "推薦房型：\n"
+            for item in sample_rooms:
+                conclusion += f"房型名稱：{item['name']}\n推薦理由：本房型擁有{item['features']}，價格{item['price']}元，風格為{item['style']}，適合{item['maxOccupancy']}人入住。\n\n"
+            conclusion += "結語：以上是我們為您精選的房型，歡迎洽詢！"
+            response = {
+                "rooms": {item['name']: {
+                    "price": item['price'],
+                    "area": item['area'],
+                    "features": item['features'],
+                    "style": item['style'],
+                    "maxOccupancy": item['maxOccupancy']
+                } for item in sample_rooms},
+                "conclusion": conclusion.strip()
+            }
+            return response
 
         if "房型推薦" in intent:
             rooms_summary = self.getRoomSummaryByRAG(question)

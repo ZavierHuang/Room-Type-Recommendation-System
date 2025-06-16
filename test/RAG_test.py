@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from unittest.mock import patch, MagicMock
 from src.RAG import RAGPipeline
+import re
 
 class TestRAGPipeline(unittest.TestCase):
     def setUp(self):
@@ -667,3 +668,35 @@ class TestRAGPipeline(unittest.TestCase):
         finally:
             # 確保測試完畢會刪除臨時檔案，避免殘留
             os.remove(path)
+            
+    def test_query_generic_recommend(self):
+        # 測試 intent 為『泛用推薦』時，是否隨機回傳三筆資料
+        # 準備假資料
+        fake_data = [
+            {"name": f"房型{i}", "price": 1000+i*100, "area": 10+i, "features": f"特色{i}", "style": f"風格{i}", "maxOccupancy": i+1} for i in range(5)
+        ]
+        rag = RAGPipeline.__new__(RAGPipeline)
+        rag.data = fake_data
+        # mock classify_intent 直接回傳『泛用推薦』
+        rag.classify_intent = lambda q: "泛用推薦"
+        # 測試
+        result = rag.query("請問有什麼推薦的房型？")
+        self.assertEqual(len(result["rooms"]), 3)
+        self.assertIn("推薦房型：", result["conclusion"])
+        self.assertIn("結語：", result["conclusion"])
+        # 檢查回傳的房型名稱都在資料庫中
+        for name in result["rooms"]:
+            self.assertTrue(any(name == item["name"] for item in fake_data))
+        # 檢查推薦理由格式
+        for name in result["rooms"]:
+            self.assertRegex(result["conclusion"], re.compile(rf"房型名稱：{name}\n推薦理由：.*"))
+    
+    def test_extract_area_range_no_area_keyword(self):
+        self.rag = RAGPipeline.__new__(RAGPipeline)
+        # 測試沒有面積相關關鍵字時，應直接回傳 (None, None, False, False)
+        result = self.rag.extract_area_range("我要三人房，價格3000元")
+        self.assertEqual(result, (None, None, False, False))
+        result2 = self.rag.extract_area_range("請推薦工業風")
+        self.assertEqual(result2, (None, None, False, False))
+        result3 = self.rag.extract_area_range("")
+        self.assertEqual(result3, (None, None, False, False))
