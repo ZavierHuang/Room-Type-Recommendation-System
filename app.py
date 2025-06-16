@@ -8,19 +8,21 @@ from src.Text2Image import Text2Image
 import json
 
 app = Flask(__name__)
+# 設定 session 加密金鑰，保護用戶 session 資料安全，防止被竄改
 app.secret_key = secrets.token_hex(16)
 ROOT = pathlib.Path(__file__).resolve().parent
 
 rag = RAGPipeline(os.path.join(ROOT, 'static/rooms.json'))
 
 """
-初始化 RAGPipeline，讀取房型資料 JSON
+首頁：顯示所有房型資料
 """
 @app.route('/')
 def index():
     # 讀取房型資料 JSON
     with open(os.path.join(ROOT, 'static/rooms.json'), 'r', encoding='utf-8') as f:
         rooms = json.load(f)
+    rag.data = rooms  # 同步 RAGPipeline 內部資料
     return render_template('index.html', rooms=rooms)
 
 """
@@ -34,8 +36,8 @@ def index():
 """
 @app.route('/chat', methods=['POST'])
 def chat():
-    user_input = request.json['message']
-    response = rag.query(user_input)
+    user_input = request.json['message']  # 取得用戶訊息
+    response = rag.query(user_input)      # 取得 RAG 回應
     return jsonify({'response': response})
 
 """
@@ -47,8 +49,9 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        # 簡單帳號密碼驗證
         if username == 'admin' and password == 'admin':
-            session['logged_in'] = True
+            session['logged_in'] = True  # 設定登入狀態
             return redirect(url_for('backend'))
         else:
             return render_template('login.html', error='帳號或密碼錯誤')
@@ -59,7 +62,7 @@ def login():
 """
 @app.route('/logout')
 def logout():
-    session.pop('logged_in', None)
+    session.pop('logged_in', None)  # 移除登入狀態
     return redirect(url_for('index'))
 
 """
@@ -68,7 +71,7 @@ def logout():
 @app.route('/backend')
 def backend():
     if not session.get('logged_in'):
-        return redirect(url_for('login'))
+        return redirect(url_for('login'))  # 未登入導向登入頁
 
     with open(os.path.join(ROOT, 'static/rooms.json'), 'r', encoding='utf-8') as f:
         rooms = json.load(f)
