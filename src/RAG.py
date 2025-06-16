@@ -221,8 +221,8 @@ class RAGPipeline:
         名稱:房B 價格:3000 面積:30
         名稱:房C 價格:4000 面積:40"
     
-   parameter : min_price=3000
-   output : "
+    parameter : min_price=3000
+    output : "
     名稱:房B 價格:3000 面積:30
     名稱:房C 價格:4000 面積:40"
     """
