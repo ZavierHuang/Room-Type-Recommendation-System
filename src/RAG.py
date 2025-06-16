@@ -26,7 +26,7 @@ class RAGPipeline:
 
 
     """
-    Classify the user's intent based on their question. (房型推薦 or 打招呼 or 其他)
+    Classify the user's intent based on their question. (房型推薦 or 打招呼 or 泛用推薦 or 其他)
     """
     def classify_intent(self, question):
         prompt = ChatPromptTemplate.from_messages([
