@@ -28,8 +28,11 @@
 
 ## Chatbot
 ### Case1 : 打招呼
-![img_3.png](img_3.png)
+<img src="img_3.png" alt="打招呼" width="250" />
+
 ### Case2 : 查詢房型
-![img_4.png](img_4.png)
+<img src="img_4.png" alt="查詢房型" width="250" />
+<img src="img_6.png" alt="查詢房型" width="250" />
+
 ### Case3 : 與房型資訊無關之問題
-![img_5.png](img_5.png)
+<img src="img_5.png" alt="與房型資訊無關之問題" width="250" />
