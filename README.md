@@ -2,7 +2,7 @@
 
 ## Overview
 - Frond-End : HTML + JavaScript
-- Back-End : Python + Flask + RAG + Stable Diffusion
+- Back-End : Python + Flask + RAG + Stable Diffusion (text-to-image)
 - Tool : LangChain + Ollama + gemma3
 
 ## Features
