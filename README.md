@@ -31,8 +31,10 @@
 <img src="img_3.png" alt="打招呼" width="250" />
 
 ### Case2 : 查詢房型
-<img src="img_4.png" alt="查詢房型" width="250" />
-<img src="img_6.png" alt="查詢房型" width="250" />
+<p align="left">
+    <img src="img_4.png" alt="查詢房型" width="250" />
+    <img src="img_6.png" alt="查詢房型" width="250" />
+</p>
 
 ### Case3 : 與房型資訊無關之問題
 <img src="img_5.png" alt="與房型資訊無關之問題" width="250" />
