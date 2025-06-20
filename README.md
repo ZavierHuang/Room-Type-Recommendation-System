@@ -14,13 +14,21 @@
 
 ## Structure Diagram
 ![img.png](img.png)
+
 ## Other Features
-- 新增等待回應之Pending圖示
-- <img src="img_7.png" alt="打招呼" width="250" />
-- 新增時間戳
-- <img src="img_8.png" alt="打招呼" width="250" />
-- 聊天室窗中，按下 Enter 鍵即可送出訊息
-- 展開房型圖片後，按下 ESC 即可回復原狀
+<ul style="list-style: disc; padding-left: 20px; line-height: 1.6;">
+  <li>
+    新增等待回應之 Pending 圖示<br />
+    <img src="img_7.png" alt="Pending 圖示" width="250" style="margin-top: 5px; margin-bottom: 15px;" />
+  </li>
+  <li>
+    新增時間戳<br />
+    <img src="img_8.png" alt="時間戳" width="250" style="margin-top: 5px; margin-bottom: 15px;" />
+  </li>
+  <li>聊天室窗中，按下 <kbd>Enter</kbd> 鍵即可送出訊息</li>
+  <li>展開房型圖片後，按下 <kbd>ESC</kbd> 即可回復原狀</li>
+</ul>
+
 
 ## Website
 ![img_1.png](img_1.png)
