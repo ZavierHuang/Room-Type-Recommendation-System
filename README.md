@@ -16,7 +16,9 @@
 ![img.png](img.png)
 ## Other Features
 - 新增等待回應之Pending圖示
+- <img src="img_7.png" alt="打招呼" width="250" />
 - 新增時間戳
+- <img src="img_8.png" alt="打招呼" width="250" />
 - 聊天室窗中，按下 Enter 鍵即可送出訊息
 - 展開房型圖片後，按下 ESC 即可回復原狀
 
